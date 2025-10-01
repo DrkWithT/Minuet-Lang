@@ -1,0 +1,12 @@
+top sumGaussN: [n] => {
+    n * (n + 1) / 2
+}
+
+top averageTwo: [a, b] => {
+    (a + b) / 2
+}
+
+top main: [args] => {
+    assertTrue(sumGaussN(10) == 55)
+    assertTrue(averageTwo(10, 20) == 15)
+}

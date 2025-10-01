@@ -1,0 +1,26 @@
+[
+{
+  "directory": "/Users/derektan/Projects/CPP_Projects_2/Minuet_Lang/build",
+  "command": "/Library/Developer/CommandLineTools/usr/bin/c++ -I/Users/derektan/Projects/CPP_Projects_2/Minuet_Lang/src -std=c++2b -isysroot /Library/Developer/CommandLineTools/SDKs/MacOSX26.0.sdk -mmacosx-version-min=15.7 -Wall -Wextra -Wpedantic -Werror -g -O0 -o src/CMakeFiles/minuetm.dir/main.cpp.o -c /Users/derektan/Projects/CPP_Projects_2/Minuet_Lang/src/main.cpp",
+  "file": "/Users/derektan/Projects/CPP_Projects_2/Minuet_Lang/src/main.cpp",
+  "output": "src/CMakeFiles/minuetm.dir/main.cpp.o"
+},
+{
+  "directory": "/Users/derektan/Projects/CPP_Projects_2/Minuet_Lang/build",
+  "command": "/Library/Developer/CommandLineTools/usr/bin/c++ -I/Users/derektan/Projects/CPP_Projects_2/Minuet_Lang/src -std=c++2b -isysroot /Library/Developer/CommandLineTools/SDKs/MacOSX26.0.sdk -mmacosx-version-min=15.7 -Wall -Wextra -Wpedantic -Werror -g -O0 -o src/frontend/CMakeFiles/frontend.dir/lexing.cpp.o -c /Users/derektan/Projects/CPP_Projects_2/Minuet_Lang/src/frontend/lexing.cpp",
+  "file": "/Users/derektan/Projects/CPP_Projects_2/Minuet_Lang/src/frontend/lexing.cpp",
+  "output": "src/frontend/CMakeFiles/frontend.dir/lexing.cpp.o"
+},
+{
+  "directory": "/Users/derektan/Projects/CPP_Projects_2/Minuet_Lang/build",
+  "command": "/Library/Developer/CommandLineTools/usr/bin/c++ -I/Users/derektan/Projects/CPP_Projects_2/Minuet_Lang/src -std=c++2b -isysroot /Library/Developer/CommandLineTools/SDKs/MacOSX26.0.sdk -mmacosx-version-min=15.7 -Wall -Wextra -Wpedantic -Werror -g -O0 -o src/driver/CMakeFiles/driver.dir/sources.cpp.o -c /Users/derektan/Projects/CPP_Projects_2/Minuet_Lang/src/driver/sources.cpp",
+  "file": "/Users/derektan/Projects/CPP_Projects_2/Minuet_Lang/src/driver/sources.cpp",
+  "output": "src/driver/CMakeFiles/driver.dir/sources.cpp.o"
+},
+{
+  "directory": "/Users/derektan/Projects/CPP_Projects_2/Minuet_Lang/build",
+  "command": "/Library/Developer/CommandLineTools/usr/bin/c++ -I/Users/derektan/Projects/CPP_Projects_2/Minuet_Lang/src -std=c++2b -isysroot /Library/Developer/CommandLineTools/SDKs/MacOSX26.0.sdk -mmacosx-version-min=15.7 -Wall -Wextra -Wpedantic -Werror -g -O0 -o src/driver/CMakeFiles/driver.dir/driver.cpp.o -c /Users/derektan/Projects/CPP_Projects_2/Minuet_Lang/src/driver/driver.cpp",
+  "file": "/Users/derektan/Projects/CPP_Projects_2/Minuet_Lang/src/driver/driver.cpp",
+  "output": "src/driver/CMakeFiles/driver.dir/driver.cpp.o"
+}
+]

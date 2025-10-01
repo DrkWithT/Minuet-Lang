@@ -1,0 +1,9 @@
+If:
+    PathMatch: [\./src/.*/\.hpp, \./src/.*/\.cpp]
+
+CompileFlags:
+    Add: [-xc++, -std=c++2b, -Wall, -Wextra, -Wepedantic, -Werror]
+    Compiler: clang++
+
+Completion:
+    AllScopes: Yes
