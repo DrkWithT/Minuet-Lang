@@ -1,14 +1,20 @@
 # naive recursive fibonacci
 
-top fibo: [n] => {
+fun fibo: [n] => {
     match n {
-        pat 0 -> 0
-        pat 1 -> 1
-        _ -> fibo(n - 1) + fibo(n - 2)
+        pat 0 -> {
+            0
+        }
+        pat 1 -> {
+            1
+        }
+        _ -> {
+            fibo(n - 1) + fibo(n - 2)
+        }
     }
 }
 
-top main: [args] => {
+fun main: [args] => {
     def arg_n := parseInt(args.0)
     def ans := fibo(arg_n)
 

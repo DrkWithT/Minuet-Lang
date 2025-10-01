@@ -1,6 +1,6 @@
 # this is a comment #
 
-top main: [args] => {
+fun main: [args] => {
     def argc := count(args)
 
     print(["program arguments: ", args])
