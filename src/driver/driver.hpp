@@ -2,7 +2,6 @@
 #define DRIVER_HPP
 
 #include <filesystem>
-#include "frontend/lexicals.hpp"
 #include "frontend/lexing.hpp"
 
 namespace Minuet::Driver::Compilation {   

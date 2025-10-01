@@ -1,7 +1,7 @@
-#include <iostream>
-#include <print>
 #include "driver/sources.hpp"
-#include "frontend/lexicals.hpp"
+#include "frontend/parsing.hpp"
+#include <__ostream/print.h>
+#include <iostream>
 #include "driver/driver.hpp"
 
 namespace Minuet::Driver::Compilation {
@@ -11,6 +11,8 @@ namespace Minuet::Driver::Compilation {
 
         m_lexer.add_lexical_item({.text = "fun", .tag = TokenType::keyword_fun});
         m_lexer.add_lexical_item({.text = "def", .tag = TokenType::keyword_def});
+        m_lexer.add_lexical_item({.text = "if", .tag = TokenType::keyword_if});
+        m_lexer.add_lexical_item({.text = "else", .tag = TokenType::keyword_else});
         m_lexer.add_lexical_item({.text = "match", .tag = TokenType::keyword_match});
         m_lexer.add_lexical_item({.text = "pat", .tag = TokenType::keyword_pat});
         m_lexer.add_lexical_item({.text = "_", .tag = TokenType::keyword_discard});
@@ -32,6 +34,7 @@ namespace Minuet::Driver::Compilation {
         using Frontend::Lexicals::Token;
         using Frontend::Lexicals::TokenType;
         using Frontend::Lexicals::token_to_sv;
+        using Frontend::Parsing::Parser;
 
         std::string main_src {Driver::Sources::read_source(main_path)};
 
@@ -39,18 +42,17 @@ namespace Minuet::Driver::Compilation {
             return false;
         }
 
-        Frontend::Lexicals::Token temp;
+        // reset lexer state with given source
+        m_lexer = {main_src};
 
-        do {
-            temp = m_lexer(main_src);
+        Parser parser;
 
-            if (temp.type == Frontend::Lexicals::TokenType::unknown) {
-                std::println(std::cerr, "Error: unknown token '{}' at source {}:{}", token_to_sv(temp, main_src), temp.line, temp.col);
+        auto parsed_unit = parser(m_lexer, main_src);
 
-                return false;
-            }
-        } while (temp.type != Frontend::Lexicals::TokenType::eof);
+        if (const auto err_count = parsed_unit.error_or(0); err_count > 0) {
+            std::println(std::cerr, "Parsing failed with {} errors.", err_count);
+        }
 
-        return true;
+        return parsed_unit.has_value();
     }
 }
