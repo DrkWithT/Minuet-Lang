@@ -1,7 +1,6 @@
 #ifndef STMTS_HPP
 #define STMTS_HPP
 
-#include <optional>
 #include <variant>
 #include <vector>
 #include "frontend/lexicals.hpp"
@@ -12,12 +11,14 @@ namespace Minuet::Syntax::Stmts {
     struct StmtNode;
     struct ExprStmt;
     struct LocalDef;
-    struct Match;
-    struct MatchCase;
+    struct If;
+    // struct Match;
+    // struct MatchCase;
     struct Block;
     struct Function;
 
-    using StmtPtr = std::unique_ptr<StmtNode<ExprStmt, LocalDef, Match, MatchCase, Block, Function>>;
+    // using StmtPtr = std::unique_ptr<StmtNode<ExprStmt, LocalDef, Match, MatchCase, Block, Function>>;
+    using StmtPtr = std::unique_ptr<StmtNode<ExprStmt, LocalDef, If, Block, Function>>;
 
     struct ExprStmt {
         Exprs::ExprPtr expr;
@@ -28,21 +29,29 @@ namespace Minuet::Syntax::Stmts {
         Exprs::ExprPtr init_expr;
     };
 
-    struct Match {
-        std::vector<MatchCase> cases;
+    struct If {
+        Exprs::ExprPtr cond_expr;
+        StmtPtr if_body;
+        StmtPtr else_body;
     };
 
-    struct MatchCase {
-        std::optional<Exprs::ExprPtr> value;
-        StmtPtr body;
-    };
+    // struct Match {
+    //     std::vector<MatchCase> cases;
+    // };
+
+    // struct MatchCase {
+    //     std::optional<Exprs::ExprPtr> value;
+    //     StmtPtr body;
+    // };
 
     struct Block {
         std::vector<StmtPtr> items;
     };
 
     struct Function {
+        std::vector<Frontend::Lexicals::Token> params;
         Frontend::Lexicals::Token name;
+        StmtPtr body;
     };
 
     template <typename ... StmtTypes>
@@ -51,6 +60,9 @@ namespace Minuet::Syntax::Stmts {
         uint32_t src_begin;
         uint32_t src_end;
     };
+
+    // using Stmt = StmtNode<ExprStmt, LocalDef, If, Match, MatchCase, Block, Function>;
+    using Stmt = StmtNode<ExprStmt, LocalDef, If, Block, Function>;
 }
 
 #endif

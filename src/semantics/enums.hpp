@@ -6,6 +6,7 @@
 namespace Minuet::Semantics::Enums {
     enum class Operator : uint8_t {
         access,
+        negate,
         mul,
         div,
         modulo,
