@@ -9,7 +9,7 @@ namespace Minuet::Driver::Compilation {
     : m_lexer {""} {
         using Frontend::Lexicals::TokenType;
 
-        m_lexer.add_lexical_item({.text = "top", .tag = TokenType::keyword_top});
+        m_lexer.add_lexical_item({.text = "fun", .tag = TokenType::keyword_fun});
         m_lexer.add_lexical_item({.text = "def", .tag = TokenType::keyword_def});
         m_lexer.add_lexical_item({.text = "match", .tag = TokenType::keyword_match});
         m_lexer.add_lexical_item({.text = "pat", .tag = TokenType::keyword_pat});
@@ -23,7 +23,9 @@ namespace Minuet::Driver::Compilation {
         m_lexer.add_lexical_item({.text = "!=", .tag = TokenType::oper_inequality});
         m_lexer.add_lexical_item({.text = "<", .tag = TokenType::oper_lesser});
         m_lexer.add_lexical_item({.text = ">", .tag = TokenType::oper_greater});
-        m_lexer.add_lexical_item({.text = "%", .tag = TokenType::oper_assign});
+        m_lexer.add_lexical_item({.text = "<=", .tag = TokenType::oper_at_most});
+        m_lexer.add_lexical_item({.text = ">=", .tag = TokenType::oper_at_least});
+        m_lexer.add_lexical_item({.text = ":=", .tag = TokenType::oper_assign});
     }
 
     [[nodiscard]] bool CompileDriver::parse_sources(const std::filesystem::path& main_path) {
