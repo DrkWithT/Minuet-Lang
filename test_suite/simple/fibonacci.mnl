@@ -1,16 +1,10 @@
 # naive recursive fibonacci
 
 fun fibo: [n] => {
-    match n {
-        pat 0 -> {
-            0
-        }
-        pat 1 -> {
-            1
-        }
-        _ -> {
-            fibo(n - 1) + fibo(n - 2)
-        }
+    if n < 2 {
+        n
+    } else {
+        fibo(n - 1) + fibo(n - 2)
     }
 }
 

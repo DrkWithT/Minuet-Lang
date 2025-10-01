@@ -18,10 +18,10 @@ _Minuet_ is a small, JS & Rust inspired language for simple scripting. Unlike sh
 <terminator> = LF
 
 <literal> = <boolean> | <integer> | <double> | <string>
-<primary> = <identifier> | "(" <compare> ")" | <lambda>
+<primary> = <identifier> | <lambda> | "(" <compare> ")"
 <lambda> = "[" <identifier> ("," <identifier>)* "]" "=>" <block>
-<lhs> = <primary> ("." <primary>)*
-<call> = <lhs> ( "(" <compare> ("," <compare>)* ")" )*
+<lhs> = <primary> ("." <call>)*
+<call> = <lhs> ( "(" <compare> ("," <compare>)* ")" )?
 <unary> = "-"? <call>
 <factor> = <unary> (("*" | "/" | "%") <unary>)*
 <term> = <factor> (("+" | "-") <factor>)*
@@ -32,14 +32,17 @@ _Minuet_ is a small, JS & Rust inspired language for simple scripting. Unlike sh
 
 ### Grammar: Statements
 ```
-<program> = (<comment> | <top>)* EOF
-<function> = "fun" <identifier> ":" (<lambda> | (<compare> <terminator>))
-<block> = "{" (<definition> | <match> | <expr-stmt>)+ "}"
+<program> = (<comment> | <function>)* EOF
+<function> = "fun" <identifier> ":" "[" <identifier> ("," <identifier>)* "]" "=>" <block>
+<block> = "{" (<definition> | <if> | <expr-stmt>)+ "}"
 <definition> = "def" <identifier> ":=" <compare> <terminator>
+<if> = "if" <compare> <block> ("else" <block>)?
 <expr-stmt> = <expr> <terminator>
-<match> = "match" <identifier> "{" <pattern>* <default> "}"
-<pattern> = "pat" <literal> "->" <compare> <terminator>
-<default> = "_" "->" <compare> <terminator>
+
+; todo
+; <match> = "match" <identifier> "{" <pattern>* <default> "}"
+; <pattern> = "pat" <literal> "->" <compare> <terminator>
+; <default> = "_" "->" <compare> <terminator>
 ```
 
 ### Roadmap
