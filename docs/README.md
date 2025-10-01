@@ -13,27 +13,27 @@ _Minuet_ is a small, JS & Rust inspired language for simple scripting. Unlike sh
 
 ### Grammar: Misc. & Expressions
 ```
-   <comment> = "#" <NON-HASH-SIGN>* "#"
-   <spaces> = SP | TAB | CR
-   <terminator> = LF
+<comment> = "#" <NON-HASH-SIGN>* "#"
+<spaces> = SP | TAB | CR
+<terminator> = LF
 
-   <literal> = <boolean> | <integer> | <double> | <string>
-   <primary> = <identifier> | "(" <compare> ")" | <lambda>
-   <lambda> = "[" <identifier> ("," <identifier>)* "]" "=>" <block>
-   <lhs> = <primary> ("." <primary>)*
-   <call> = <lhs> ( "(" <compare> ("," <compare>)* ")" )*
-   <unary> = "-"? <call>
-   <factor> = <unary> (("*" | "/" | "%") <unary>)*
-   <term> = <factor> (("+" | "-") <factor>)*
-   <equality> = <term> (("==" | "!=") <term>)*
-   <compare> = <equality> (("<" | ">" | ">=" | "<=") <equality>)*
-   <assign> = <lhs> (":=" <compare>)?
+<literal> = <boolean> | <integer> | <double> | <string>
+<primary> = <identifier> | "(" <compare> ")" | <lambda>
+<lambda> = "[" <identifier> ("," <identifier>)* "]" "=>" <block>
+<lhs> = <primary> ("." <primary>)*
+<call> = <lhs> ( "(" <compare> ("," <compare>)* ")" )*
+<unary> = "-"? <call>
+<factor> = <unary> (("*" | "/" | "%") <unary>)*
+<term> = <factor> (("+" | "-") <factor>)*
+<equality> = <term> (("==" | "!=") <term>)*
+<compare> = <equality> (("<" | ">" | ">=" | "<=") <equality>)*
+<assign> = <lhs> (":=" <compare>)?
 ```
 
 ### Grammar: Statements
 ```
 <program> = (<comment> | <top>)* EOF
-<top> = <identifier> ":" (<lambda> | (<compare> <terminator>))
+<function> = "fun" <identifier> ":" (<lambda> | (<compare> <terminator>))
 <block> = "{" (<definition> | <match> | <expr-stmt>)+ "}"
 <definition> = "def" <identifier> ":=" <compare> <terminator>
 <expr-stmt> = <expr> <terminator>
@@ -41,3 +41,9 @@ _Minuet_ is a small, JS & Rust inspired language for simple scripting. Unlike sh
 <pattern> = "pat" <literal> "->" <compare> <terminator>
 <default> = "_" "->" <compare> <terminator>
 ```
+
+### Roadmap
+ - **0.0.2**: Implement the parser.
+ - **0.0.3**: Implement the AST to TAC-CFG converter.
+ - **0.0.4**: Implement the IR to bytecode converter.
+ - **0.1.0**: Implement the VM... this must pass the first 3 suite programs.
