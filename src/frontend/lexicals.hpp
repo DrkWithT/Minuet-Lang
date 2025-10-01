@@ -12,6 +12,8 @@ namespace Minuet::Frontend::Lexicals {
         comment,
         keyword_fun,
         keyword_def,
+        keyword_if,
+        keyword_else,
         keyword_match,
         keyword_pat,
         keyword_discard,

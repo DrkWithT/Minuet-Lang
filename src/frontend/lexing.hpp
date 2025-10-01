@@ -43,6 +43,7 @@ namespace Minuet::Frontend::Lexing {
         Lexer(std::string_view source) noexcept;
 
         void add_lexical_item(const Lexicals::LexicalEntry& entry);
+
         [[nodiscard]] auto operator()(std::string_view sv) -> Lexicals::Token;
 
     private:
