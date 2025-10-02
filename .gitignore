@@ -39,6 +39,7 @@
 build/
 logs/
 CMakeUserPresets.json
+compile_commands.json
 
 # Other
 .env
