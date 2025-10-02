@@ -1,9 +1,9 @@
 fun sumGaussN: [n] => {
-    n * (n + 1) / 2
+    return n * (n + 1) / 2
 }
 
 fun averageTwo: [a, b] => {
-    (a + b) / 2
+    return (a + b) / 2
 }
 
 fun main: [args] => {

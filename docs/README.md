@@ -14,11 +14,10 @@ _Minuet_ is a small, JS & Rust inspired language for simple scripting. Unlike sh
 ### Grammar: Misc. & Expressions
 ```
 <comment> = "#" <NON-HASH-SIGN>* "#"
-<spaces> = SP | TAB | CR
-<terminator> = LF
+<spaces> = SP | TAB | CR | LF
 
 <literal> = <boolean> | <integer> | <double> | <string>
-<primary> = <identifier> | <lambda> | "(" <compare> ")"
+<primary> = <identifier> | <lambda> | "(" <compare> ")" | <literal>
 <lambda> = "[" <identifier> ("," <identifier>)* "]" "=>" <block>
 <lhs> = <primary> ("." <call>)*
 <call> = <lhs> ( "(" <compare> ("," <compare>)* ")" )?
@@ -37,6 +36,7 @@ _Minuet_ is a small, JS & Rust inspired language for simple scripting. Unlike sh
 <block> = "{" (<definition> | <if> | <expr-stmt>)+ "}"
 <definition> = "def" <identifier> ":=" <compare> <terminator>
 <if> = "if" <compare> <block> ("else" <block>)?
+<return> = "return" <compare>
 <expr-stmt> = <expr> <terminator>
 
 ; todo
