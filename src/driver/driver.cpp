@@ -6,7 +6,7 @@
 
 namespace Minuet::Driver::Compilation {
     CompileDriver::CompileDriver()
-    : m_lexer {""} {
+    : m_lexer {} {
         using Frontend::Lexicals::TokenType;
 
         m_lexer.add_lexical_item({.text = "fun", .tag = TokenType::keyword_fun});
@@ -16,6 +16,7 @@ namespace Minuet::Driver::Compilation {
         m_lexer.add_lexical_item({.text = "match", .tag = TokenType::keyword_match});
         m_lexer.add_lexical_item({.text = "pat", .tag = TokenType::keyword_pat});
         m_lexer.add_lexical_item({.text = "_", .tag = TokenType::keyword_discard});
+        m_lexer.add_lexical_item({.text = "return", .tag = TokenType::keyword_return});
         m_lexer.add_lexical_item({.text = "*", .tag = TokenType::oper_times});
         m_lexer.add_lexical_item({.text = "/", .tag = TokenType::oper_slash});
         m_lexer.add_lexical_item({.text = "%", .tag = TokenType::oper_modulo});
@@ -27,7 +28,8 @@ namespace Minuet::Driver::Compilation {
         m_lexer.add_lexical_item({.text = ">", .tag = TokenType::oper_greater});
         m_lexer.add_lexical_item({.text = "<=", .tag = TokenType::oper_at_most});
         m_lexer.add_lexical_item({.text = ">=", .tag = TokenType::oper_at_least});
-        m_lexer.add_lexical_item({.text = ":=", .tag = TokenType::oper_assign});
+        m_lexer.add_lexical_item({.text = "=", .tag = TokenType::oper_assign});
+        m_lexer.add_lexical_item({.text = "=>", .tag = TokenType::arrow});
     }
 
     [[nodiscard]] bool CompileDriver::parse_sources(const std::filesystem::path& main_path) {
@@ -43,10 +45,9 @@ namespace Minuet::Driver::Compilation {
         }
 
         // reset lexer state with given source
-        m_lexer = {main_src};
+        m_lexer.reset_with_src(main_src);
 
         Parser parser;
-
         auto parsed_unit = parser(m_lexer, main_src);
 
         if (const auto err_count = parsed_unit.error_or(0); err_count > 0) {
