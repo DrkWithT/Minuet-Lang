@@ -15,11 +15,12 @@ namespace Minuet::Syntax::Stmts {
     struct If;
     // struct Match;
     // struct MatchCase;
+    struct Return;
     struct Block;
     struct Function;
 
     // using StmtPtr = std::unique_ptr<StmtNode<ExprStmt, LocalDef, If, Match, MatchCase, Block, Function>>;
-    using StmtPtr = std::unique_ptr<StmtNode<ExprStmt, LocalDef, If, Block, Function>>;
+    using StmtPtr = std::unique_ptr<StmtNode<ExprStmt, LocalDef, If, Return, Block, Function>>;
 }
 
 namespace Minuet::Syntax::Exprs {

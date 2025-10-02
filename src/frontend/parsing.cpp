@@ -1,3 +1,4 @@
+#include <stdexcept>
 #include <utility>
 #include <memory>
 #include <vector>
@@ -27,7 +28,7 @@ namespace Minuet::Frontend::Parsing {
         const auto culprit_len = token_length(token);
         std::string_view culprit_txt = src.substr(culprit_beg, culprit_len);
 
-        std::println(std::cerr, "\033[1;31mParse Error\033[0m at \033[1;33msource[{}:{}]\033[0m:\n\nCulprit: '{}'\nNote: {}\n", culprit_ln, culprit_col, culprit_txt, msg);
+        throw std::runtime_error {std::format("\033[1;31mParse Error\033[0m at \033[1;33msource[{}:{}]\033[0m:\n\nCulprit: '{}'\nNote: {}\n", culprit_ln, culprit_col, culprit_txt, msg)};
     }
 
     auto Parser::advance(Lexing::Lexer& lexer, std::string_view src) -> Token {
@@ -41,7 +42,7 @@ namespace Minuet::Frontend::Parsing {
             }
 
             break;
-        } while (temp.type != TokenType::eof);
+        } while (true);
 
         return temp;
     }
@@ -51,16 +52,14 @@ namespace Minuet::Frontend::Parsing {
         m_current = advance(lexer, src);
     }
 
-    void Parser::skip_terminators(Lexing::Lexer& lexer, std::string_view src) {
-        while (match(m_current, TokenType::terminator)) {
-            consume(lexer, src);
-        }
-    }
-
     void Parser::recover(Lexing::Lexer& lexer, std::string_view src) {
         ++m_error_count;
 
-        while (!match(m_current, TokenType::keyword_fun, TokenType::keyword_def)) {
+        while (!match(m_current, TokenType::eof)) {
+            if (match(m_current, TokenType::keyword_fun)) {
+                break;
+            }
+
             consume(lexer, src);
         }
     }
@@ -82,7 +81,6 @@ namespace Minuet::Frontend::Parsing {
         }
 
         report_error(temp_token_copy, src, "Invalid literal.");
-        recover(lexer, src);
 
         return {};
     }
@@ -105,15 +103,12 @@ namespace Minuet::Frontend::Parsing {
         } else if (match(temp_token_copy, TokenType::open_paren)) {
             consume(lexer, src);
             auto wrapped_expr = parse_compare(lexer, src);
-            consume(lexer, src, TokenType::close_bracket);
+            consume(lexer, src, TokenType::close_paren);
 
             return wrapped_expr;
+        } else {
+            return parse_literal(lexer, src);
         }
-
-        report_error(temp_token_copy, src, "Invalid primary expression. Only names, lambdas, and (<expression>) are allowed.");
-        recover(lexer, src);
-
-        return {};
     }
 
     auto Parser::parse_lambda(Lexing::Lexer& lexer, std::string_view src) -> ExprPtr {
@@ -139,6 +134,7 @@ namespace Minuet::Frontend::Parsing {
         }
 
         consume(lexer, src, TokenType::close_bracket);
+        consume(lexer, src, TokenType::arrow);
 
         auto lambda_body = parse_block(lexer, src);
         const auto lambda_end = m_current.start;
@@ -267,6 +263,7 @@ namespace Minuet::Frontend::Parsing {
             })(m_current.type);
 
             consume(lexer, src);
+
             auto other_operand_expr = parse_unary(lexer, src);
             const auto expr_end = m_current.start;
 
@@ -413,8 +410,6 @@ namespace Minuet::Frontend::Parsing {
         auto inner_expr = parse_assign(lexer, src);
         const auto stmt_end = m_current.start;
 
-        skip_terminators(lexer, src);
-
         return std::make_unique<Stmt>(Stmt {
             .data = Syntax::Stmts::ExprStmt {
                 .expr = std::move(inner_expr),
@@ -435,8 +430,6 @@ namespace Minuet::Frontend::Parsing {
 
         auto init_expr = parse_compare(lexer, src);
         const auto stmt_end = m_current.start;
-
-        skip_terminators(lexer, src);
 
         return std::make_unique<Stmt>(Stmt {
             .data = Syntax::Stmts::LocalDef {
@@ -485,6 +478,22 @@ namespace Minuet::Frontend::Parsing {
         });
     }
 
+    auto Parser::parse_return(Lexing::Lexer& lexer, std::string_view src) -> Syntax::Stmts::StmtPtr {
+        const auto stmt_begin = m_current.start;
+        consume(lexer, src, TokenType::keyword_return);
+
+        auto result_expr = parse_compare(lexer, src);
+        const auto stmt_end = m_current.start;
+
+        return std::make_unique<Stmt>(Stmt {
+            .data = Syntax::Stmts::Return {
+                .result = std::move(result_expr),
+            },
+            .src_begin = stmt_begin,
+            .src_end = stmt_end,
+        });
+    }
+
     // auto Parser::parse_match_case(Lexing::Lexer& lexer, std::string_view src) -> Syntax::Stmts::StmtPtr;
     // auto Parser::parse_match(Lexing::Lexer& lexer, std::string_view src) -> Syntax::Stmts::StmtPtr;
 
@@ -507,6 +516,8 @@ namespace Minuet::Frontend::Parsing {
                     return parse_definition(lexer, src);
                 case TokenType::keyword_if:
                     return parse_if(lexer, src);
+                case TokenType::keyword_return:
+                    return parse_return(lexer, src);
                 default:
                     return parse_expr_stmt(lexer, src);
                 }
@@ -554,6 +565,9 @@ namespace Minuet::Frontend::Parsing {
             params.emplace_back(m_previous);
         }
 
+        consume(lexer, src, TokenType::close_bracket);
+        consume(lexer, src, TokenType::arrow);
+
         auto body = parse_block(lexer, src);
         const auto stmt_end = m_current.start;
 
@@ -569,13 +583,17 @@ namespace Minuet::Frontend::Parsing {
     }
 
     auto Parser::parse_program(Lexing::Lexer& lexer, std::string_view src) -> std::expected<Syntax::AST::UnitAST, int> {
-        skip_terminators(lexer, src);
         consume(lexer, src);
 
         std::vector<StmtPtr> decls;
 
         while (!match(m_current, TokenType::eof)) {
-            decls.emplace_back(parse_function(lexer, src));
+            try {
+                decls.emplace_back(parse_function(lexer, src));
+            } catch (const std::runtime_error& parse_err) {
+                std::println(std::cerr, "{}: {}", m_error_count, parse_err.what());
+                recover(lexer, src);
+            }
         }
 
         return decls;

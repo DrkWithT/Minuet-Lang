@@ -57,6 +57,7 @@ namespace Minuet::Frontend::Parsing {
         [[nodiscard]] auto parse_if(Lexing::Lexer& lexer, std::string_view src) -> Syntax::Stmts::StmtPtr;
         // [[nodiscard]] auto parse_match_case(Lexing::Lexer& lexer, std::string_view src) -> Syntax::Stmts::StmtPtr;
         // [[nodiscard]] auto parse_match(Lexing::Lexer& lexer, std::string_view src) -> Syntax::Stmts::StmtPtr;
+        [[nodiscard]] auto parse_return(Lexing::Lexer& lexer, std::string_view src) -> Syntax::Stmts::StmtPtr;
         [[nodiscard]] auto parse_block(Lexing::Lexer& lexer, std::string_view src) -> Syntax::Stmts::StmtPtr;
         [[nodiscard]] auto parse_function(Lexing::Lexer& lexer, std::string_view src) -> Syntax::Stmts::StmtPtr;
         [[nodiscard]] auto parse_program(Lexing::Lexer& lexer, std::string_view src) -> std::expected<Syntax::AST::UnitAST, int>;
