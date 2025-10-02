@@ -5,11 +5,16 @@
 #include "frontend/lexing.hpp"
 
 namespace Minuet::Frontend::Lexing {
-    Lexer::Lexer(std::string_view source) noexcept
-    : m_items {}, m_pos {0U}, m_end {static_cast<uint32_t>(source.length())}, m_line {1}, m_col {1} {}
+    Lexer::Lexer() noexcept
+    : m_items {}, m_pos {0U}, m_end {0U}, m_line {1}, m_col {1} {}
 
     void Lexer::add_lexical_item(const Lexicals::LexicalEntry& entry) {
-        m_items.emplace(std::format("{}", entry.text), entry.tag);
+        m_items[std::format("{}", entry.text)] = entry.tag;
+    }
+
+    void Lexer::reset_with_src(std::string_view next_src_v) {
+        m_pos = 0U;
+        m_end = next_src_v.length();
     }
 
     [[nodiscard]] auto Lexer::operator()(std::string_view sv) -> Lexicals::Token {
@@ -31,8 +36,8 @@ namespace Minuet::Frontend::Lexing {
 
         switch (peek_0) {
             case '\0': return lex_single(Lexicals::TokenType::eof, sv);
-            case '\n': return lex_single(Lexicals::TokenType::terminator, sv);
-            case '#': return lex_single(Lexicals::TokenType::comment, sv);
+            case '#': return lex_between(peek_0, Lexicals::TokenType::comment, sv);
+            case '\"': return lex_between(peek_0, Lexicals::TokenType::literal_string, sv);
             case '[': return lex_single(Lexicals::TokenType::open_bracket, sv);
             case ']': return lex_single(Lexicals::TokenType::close_bracket, sv);
             case '{': return lex_single(Lexicals::TokenType::open_brace, sv);
@@ -76,6 +81,7 @@ namespace Minuet::Frontend::Lexing {
         const auto temp_col = m_col;
 
         update_src_location(sv[temp_begin]);
+        ++m_pos;
 
         return Lexicals::Token {
             .type = tag,
@@ -91,7 +97,7 @@ namespace Minuet::Frontend::Lexing {
         ++m_pos;
 
         const auto temp_begin = m_pos;
-        auto temp_end = 0U;
+        auto temp_end = m_pos;
         const auto temp_ln = m_line;
         const auto temp_col = m_col;
         auto closed = false;
@@ -102,13 +108,14 @@ namespace Minuet::Frontend::Lexing {
             update_src_location(c);
 
             if (c == delim) {
-                closed = true;
-                temp_end = m_pos - 1;
+                --temp_end;
                 ++m_pos;
+                closed = true;
                 break;
             }
 
             ++m_pos;
+            ++temp_end;
         }
 
         const auto checked_tag = (closed) ? tag : Lexicals::TokenType::unknown ;
@@ -124,7 +131,7 @@ namespace Minuet::Frontend::Lexing {
 
     [[nodiscard]] auto Lexer::lex_spaces(std::string_view sv) noexcept -> Lexicals::Token {
         const auto temp_begin = m_pos;
-        auto temp_end = 0U;
+        auto temp_end = m_pos;
         const auto temp_ln = m_line;
         const auto temp_col = m_col;
 
@@ -132,12 +139,13 @@ namespace Minuet::Frontend::Lexing {
             const auto c = sv[m_pos];
 
             if (!Helpers::match_spaces(c)) {
-                temp_end = m_pos - 1;
+                --temp_end;
                 break;
             }
             
             update_src_location(c);
             ++m_pos;
+            ++temp_end;
         }
 
         return Lexicals::Token {
@@ -151,7 +159,7 @@ namespace Minuet::Frontend::Lexing {
 
     [[nodiscard]] auto Lexer::lex_numeric(std::string_view sv) noexcept -> Lexicals::Token {
         const auto temp_begin = m_pos;
-        auto temp_end = 0U;
+        auto temp_end = m_pos;
         const auto temp_ln = m_line;
         const auto temp_col = m_col;
         auto dots = 0;
@@ -160,7 +168,7 @@ namespace Minuet::Frontend::Lexing {
             const auto c = sv[m_pos];
 
             if (!Helpers::match_numeric(c)) {
-                temp_end = m_pos - 1;
+                --temp_end;
                 break;
             }
 
@@ -170,6 +178,7 @@ namespace Minuet::Frontend::Lexing {
 
             update_src_location(c);
             ++m_pos;
+            ++temp_end;
         }
 
         const auto checked_tag = ([](int dot_count) {
@@ -191,7 +200,7 @@ namespace Minuet::Frontend::Lexing {
 
     [[nodiscard]] auto Lexer::lex_operator(std::string_view sv) noexcept -> Lexicals::Token {
         const auto temp_begin = m_pos;
-        auto temp_end = 0U;
+        auto temp_end = m_pos;
         const auto temp_ln = m_line;
         const auto temp_col = m_col;
 
@@ -199,12 +208,13 @@ namespace Minuet::Frontend::Lexing {
             const auto c = sv[m_pos];
 
             if (!Helpers::match_operator(c)) {
-                temp_end = m_pos - 1;
+                --temp_end;
                 break;
             }
 
             update_src_location(c);
             ++m_pos;
+            ++temp_end;
         }
 
         std::string lexeme = std::format("{}", sv.substr(temp_begin, temp_end - temp_begin + 1));
@@ -221,7 +231,7 @@ namespace Minuet::Frontend::Lexing {
 
     [[nodiscard]] auto Lexer::lex_word(std::string_view sv) noexcept -> Lexicals::Token {
         const auto temp_begin = m_pos;
-        auto temp_end = 0U;
+        auto temp_end = m_pos;
         const auto temp_ln = m_line;
         const auto temp_col = m_col;
 
@@ -229,12 +239,13 @@ namespace Minuet::Frontend::Lexing {
             const auto c = sv[m_pos];
 
             if (!Helpers::match_alphanum(c)) {
-                temp_end = m_pos - 1;
+                --temp_end;
                 break;
             }
 
             update_src_location(c);
             ++m_pos;
+            ++temp_end;
         }
 
         std::string lexeme = std::format("{}", sv.substr(temp_begin, temp_end - temp_begin + 1));

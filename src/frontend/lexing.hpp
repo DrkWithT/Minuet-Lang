@@ -14,7 +14,7 @@ namespace Minuet::Frontend::Lexing {
         }
 
         [[nodiscard]] constexpr auto match_spaces(char c) -> bool {
-            return match_discrete(c, ' ', '\t', '\r');
+            return match_discrete(c, ' ', '\t', '\r', '\n');
         }
 
         [[nodiscard]] constexpr auto match_alpha(char c) -> bool {
@@ -40,9 +40,11 @@ namespace Minuet::Frontend::Lexing {
 
     class Lexer {
     public:
-        Lexer(std::string_view source) noexcept;
+        Lexer() noexcept;
 
         void add_lexical_item(const Lexicals::LexicalEntry& entry);
+
+        void reset_with_src(std::string_view next_src_v);
 
         [[nodiscard]] auto operator()(std::string_view sv) -> Lexicals::Token;
 

@@ -8,7 +8,6 @@ namespace Minuet::Frontend::Lexicals {
     enum class TokenType {
         unknown,
         spaces,
-        terminator,
         comment,
         keyword_fun,
         keyword_def,
@@ -17,6 +16,7 @@ namespace Minuet::Frontend::Lexicals {
         keyword_match,
         keyword_pat,
         keyword_discard,
+        keyword_return,
         identifier,
         literal_false,
         literal_true,
@@ -44,6 +44,7 @@ namespace Minuet::Frontend::Lexicals {
         comma,
         colon,
         dot,
+        arrow,
         eof,
     };
 
