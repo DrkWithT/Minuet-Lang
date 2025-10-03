@@ -16,6 +16,7 @@ namespace Minuet::Frontend::Parsing {
     using Lexicals::token_span;
     using Lexicals::token_location;
     using Lexicals::token_length;
+    using Lexicals::token_to_sv;
     using Syntax::Exprs::ExprPtr;
     using Syntax::Exprs::Expr;
     using Syntax::Stmts::StmtPtr;
@@ -582,14 +583,39 @@ namespace Minuet::Frontend::Parsing {
         });
     }
 
-    auto Parser::parse_program(Lexing::Lexer& lexer, std::string_view src) -> std::expected<Syntax::AST::UnitAST, int> {
+    auto Parser::parse_import(Lexing::Lexer& lexer, std::string_view src, std::stack<Driver::Utils::PendingSource>& pending_srcs, uint32_t& src_counter) -> Syntax::Stmts::StmtPtr {
+        consume(lexer, src, TokenType::keyword_import);
+        consume(lexer, src, TokenType::literal_string);
+
+        auto import_target_token = m_previous;
+        std::string raw_target_str = std::format("{}", token_to_sv(import_target_token, src));
+
+        ++src_counter;
+
+        const auto target_src_id = src_counter;
+
+        pending_srcs.push({
+            .file_path = {raw_target_str},
+            .src_id = target_src_id,
+        });
+
+        return std::make_unique<Stmt>(Syntax::Stmts::Import {
+            .target = import_target_token,
+        });
+    }
+
+    auto Parser::parse_program(Lexing::Lexer& lexer, std::string_view src, std::stack<Driver::Utils::PendingSource>& pending_srcs, uint32_t& src_counter) -> std::expected<Syntax::AST::UnitAST, int> {
         consume(lexer, src);
 
-        std::vector<StmtPtr> decls;
+        Syntax::AST::UnitAST decls;
 
         while (!match(m_current, TokenType::eof)) {
             try {
-                decls.emplace_back(parse_function(lexer, src));
+                if (match(m_current, TokenType::keyword_import)) {
+                    decls.emplace_back(parse_import(lexer, src, pending_srcs, src_counter));
+                } else {
+                    decls.emplace_back(parse_function(lexer, src));
+                }
             } catch (const std::runtime_error& parse_err) {
                 std::println(std::cerr, "{}: {}", m_error_count, parse_err.what());
                 recover(lexer, src);
@@ -602,8 +628,8 @@ namespace Minuet::Frontend::Parsing {
     Parser::Parser()
     : m_previous {}, m_current {}, m_error_count {0} {}
 
-    [[nodiscard]] auto Parser::operator()(Lexing::Lexer& lexer, std::string_view src) -> std::expected<Syntax::AST::UnitAST, int> {
-        auto prgm = parse_program(lexer, src);
+    [[nodiscard]] auto Parser::operator()(Lexing::Lexer& lexer, std::string_view src, std::stack<Driver::Utils::PendingSource>& pending_srcs, uint32_t& src_counter) -> std::expected<Syntax::AST::UnitAST, int> {
+        auto prgm = parse_program(lexer, src, pending_srcs, src_counter);
 
         if (m_error_count > 0) {
             return std::expected<Syntax::AST::UnitAST, int>(m_error_count);

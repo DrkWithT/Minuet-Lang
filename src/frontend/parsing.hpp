@@ -3,10 +3,12 @@
 
 #include <string_view>
 #include <expected>
+#include <stack>
 
 #include "frontend/lexicals.hpp"
 #include "frontend/lexing.hpp"
 #include "syntax/ast.hpp"
+#include "driver/utils.hpp"
 
 namespace Minuet::Frontend::Parsing {
     void report_error(const Lexicals::Token& token, std::string_view src, std::string_view msg);
@@ -60,12 +62,13 @@ namespace Minuet::Frontend::Parsing {
         [[nodiscard]] auto parse_return(Lexing::Lexer& lexer, std::string_view src) -> Syntax::Stmts::StmtPtr;
         [[nodiscard]] auto parse_block(Lexing::Lexer& lexer, std::string_view src) -> Syntax::Stmts::StmtPtr;
         [[nodiscard]] auto parse_function(Lexing::Lexer& lexer, std::string_view src) -> Syntax::Stmts::StmtPtr;
-        [[nodiscard]] auto parse_program(Lexing::Lexer& lexer, std::string_view src) -> std::expected<Syntax::AST::UnitAST, int>;
+        [[nodiscard]] auto parse_import(Lexing::Lexer& lexer, std::string_view src, std::stack<Driver::Utils::PendingSource>& pending_srcs, uint32_t& src_counter) -> Syntax::Stmts::StmtPtr;
+        [[nodiscard]] auto parse_program(Lexing::Lexer& lexer, std::string_view src, std::stack<Driver::Utils::PendingSource>& pending_srcs, uint32_t& src_counter) -> std::expected<Syntax::AST::UnitAST, int>;
 
     public:
         Parser();
 
-        [[nodiscard]] auto operator()(Lexing::Lexer& lexer, std::string_view src) -> std::expected<Syntax::AST::UnitAST, int>;
+        [[nodiscard]] auto operator()(Lexing::Lexer& lexer, std::string_view src, std::stack<Driver::Utils::PendingSource>& pending_srcs, uint32_t& src_counter) -> std::expected<Syntax::AST::UnitAST, int>;
     };
 }
 

@@ -18,9 +18,10 @@ namespace Minuet::Syntax::Stmts {
     struct Return;
     struct Block;
     struct Function;
+    struct Import;
 
     // using StmtPtr = std::unique_ptr<StmtNode<ExprStmt, LocalDef, If, Match, MatchCase, Block, Function>>;
-    using StmtPtr = std::unique_ptr<StmtNode<ExprStmt, LocalDef, If, Return, Block, Function>>;
+    using StmtPtr = std::unique_ptr<StmtNode<ExprStmt, LocalDef, If, Return, Block, Function, Import>>;
 }
 
 namespace Minuet::Syntax::Exprs {
