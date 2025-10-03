@@ -30,10 +30,24 @@ namespace Minuet::IR::Convert {
     : m_globals {}, m_locals {}, m_pending_links {}, m_result_cfgs {}, m_proto_consts {}, m_proto_main_id {-1}, m_error_count {0}, m_next_func_aa {0}, m_next_local_aa {0}, m_prepassing {true} {}
 
     auto ASTConversion::operator()(const Syntax::AST::FullAST& src_mapped_ast, const std::vector<std::string>& source_map) -> std::optional<FullIR> {
+        // 1. Prepass top-level definitions of functions, etc. to avoid forward declaration jank.
         for (const auto& [ast, ast_src_id] : src_mapped_ast) {
             if (!emit_stmt(ast, source_map.at(ast_src_id))) {
                 return {};
             }
+        }
+
+        // 2. Do the actual emitting pass over the AST once all top-level functions, etc. are resolved. This accounts for self / mutually recursive functions which would otherwise cause a false definition error.
+        m_prepassing = false;
+
+        for (const auto& [ast, ast_src_id] : src_mapped_ast) {
+            if (!emit_stmt(ast, source_map.at(ast_src_id))) {
+                return {};
+            }
+        }
+
+        if (m_error_count > 0) {
+            return {};
         }
 
         return FullIR {
@@ -390,13 +404,11 @@ namespace Minuet::IR::Convert {
         // Case 2:
         //     (Pre-Block)-*
         //     |           |
-        //     F         (T-Block)
+        //   (T-Block)     F
         //     |          /
         //     (Post-Block)
 
-        /// Sooo... I'll have to make the CFG IR nodes for any if/else stmts. Gotta note these down because I forget shit lol
-
-        /// 1: handle the initial basic block- here, the if-stmt check is done before the actual branching by JUMP_ELSE... that instruction pops off a boolean and then jumps if it's false.
+        /// 1: handle the initial basic block- here, the if-stmt check is done before the actual branching by JUMP_ELSE... that instruction pops off a boolean and then jumps if the boolean is false.
         const auto pre_if_bb_id = m_result_cfgs.back().bb_count() - 1;
         const auto if_true_bb_id = pre_if_bb_id + 1;
 
@@ -481,6 +493,8 @@ namespace Minuet::IR::Convert {
             });
         }
 
+        // m_continuing_bb = true;
+
         return true;
     }
 
@@ -512,15 +526,19 @@ namespace Minuet::IR::Convert {
     }
 
     auto ASTConversion::emit_function(const Syntax::Stmts::Function& fun, std::string_view source) -> bool {
-        std::string func_name = std::format("{}", token_to_sv(fun.name, source));
-        const auto next_func_aa_opt = gen_fun_aa();
+        if (m_prepassing) {
+            std::string func_name = std::format("{}", token_to_sv(fun.name, source));
+            const auto next_func_aa_opt = gen_fun_aa();
+    
+            if (!next_func_aa_opt) {
+                return false;
+            }
+    
+            if (!record_name_aa(NameLocation::global_function_slot, func_name, next_func_aa_opt.value())) {
+                return false;
+            }
 
-        if (!next_func_aa_opt) {
-            return false;
-        }
-
-        if (!record_name_aa(NameLocation::global_function_slot, func_name, next_func_aa_opt.value())) {
-            return false;
+            return true;
         }
 
         auto generation_ok = true;

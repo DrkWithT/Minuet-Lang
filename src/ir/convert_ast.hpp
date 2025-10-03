@@ -73,6 +73,7 @@ namespace Minuet::IR::Convert {
         uint16_t m_next_func_aa;
         uint16_t m_next_local_aa;
         bool m_prepassing;
+        // bool m_continuing_bb;
     };
 }
 
