@@ -66,6 +66,16 @@ namespace Minuet::IR::Printing {
         const auto& [ir_cfgs, ir_constants, entry_id] = full_ir;
 
         std::println("\n\033[1;33mComplete IR:\033[0m\n");
+        std::println("\033[1;33mConstants:\033[0m\n");
+
+        auto constant_id = 0;
+
+        for (const auto& constant_val : ir_constants) {
+            std::println("const:{} = {}\n", constant_id, constant_val.to_string());
+            ++constant_id;
+        }
+
+        std::println("\033[1;33mCFG's:\033[0m\n");
 
         for (const auto& cfg : ir_cfgs) {
             print_cfg(cfg);

@@ -23,7 +23,5 @@ int main(int argc, char* argv[]) {
     }
 
     Driver::Compilation::CompileDriver compiler;
-    const auto parse_ok = compiler.parse_sources({argv[1]});
-
-    return (parse_ok) ? 0 : 1 ;
+    compiler(argv[1]);
 }

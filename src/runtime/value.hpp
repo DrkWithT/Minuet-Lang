@@ -2,6 +2,8 @@
 #define VALUE_HPP
 
 #include <variant>
+#include <string>
+#include <format>
 
 namespace Minuet::Runtime {
     enum class ValTag {
@@ -13,6 +15,7 @@ namespace Minuet::Runtime {
 
     struct ValDud {};
 
+    /// TODO: add string support in Value!!
     class Value {
     public:
         Value();
@@ -45,6 +48,8 @@ namespace Minuet::Runtime {
         [[nodiscard]] auto operator%=(const Value& arg) -> Value&;
         [[nodiscard]] auto operator+=(const Value& arg) -> Value&;
         [[nodiscard]] auto operator-=(const Value& arg) -> Value&;
+
+        [[nodiscard]] auto to_string() const& -> std::string;
 
     private:
         std::variant<ValDud, bool, int, double> m_data;

@@ -230,4 +230,16 @@ namespace Minuet::Runtime {
 
         return *this;
     }
+
+    auto Value::to_string() const& -> std::string {
+        if (auto bool_p = std::get_if<bool>(&m_data); bool_p) {
+            return std::format("{}", *bool_p);
+        } else if (auto i32_p = std::get_if<int>(&m_data); i32_p) {
+            return std::format("{}", *i32_p);
+        } else if (auto f64_p = std::get_if<double>(&m_data); f64_p) {
+            return std::format("{}", *f64_p);
+        } else {
+            return "(dud)";
+        }
+    }
 }
