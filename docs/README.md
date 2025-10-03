@@ -31,7 +31,8 @@ _Minuet_ is a small, JS & Rust inspired language for simple scripting. Unlike sh
 
 ### Grammar: Statements
 ```
-<program> = (<comment> | <function>)* EOF
+<import> = "import" <string>
+<program> = (<import> | <function>)* EOF
 <function> = "fun" <identifier> ":" "[" <identifier> ("," <identifier>)* "]" "=>" <block>
 <block> = "{" (<definition> | <if> | <expr-stmt>)+ "}"
 <definition> = "def" <identifier> ":=" <compare> <terminator>
