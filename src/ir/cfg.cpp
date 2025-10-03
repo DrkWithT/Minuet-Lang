@@ -36,6 +36,14 @@ namespace Minuet::IR::CFG {
         return {};
     }
 
+    [[nodiscard]] auto CFG::get_newest_bb() & noexcept -> std::optional<BasicBlock*> {
+        if (m_blocks.empty()) {
+            return {};
+        }
+
+        return &m_blocks.back();
+    }
+
     auto CFG::add_bb() & -> int {
         const int next_bb_id = m_blocks.size();
 

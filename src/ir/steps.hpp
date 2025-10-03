@@ -2,6 +2,7 @@
 #define STEPS_HPP
 
 #include <cstdint>
+#include <string_view>
 #include <variant>
 
 namespace Minuet::IR::Steps {
@@ -9,6 +10,7 @@ namespace Minuet::IR::Steps {
         nop,
         push,
         pop,
+        neg,
         inc,
         dec,
         mul,
@@ -16,6 +18,12 @@ namespace Minuet::IR::Steps {
         mod,
         add,
         sub,
+        equ,
+        neq,
+        lt,
+        gt,
+        lte,
+        gte,
         jump,
         jump_if,
         jump_else,
@@ -23,14 +31,25 @@ namespace Minuet::IR::Steps {
         native_call,
         ret,
         halt,
+        meta_load_aa,
+        meta_begin_if,
+        meta_end_if,
+        meta_begin_else,
+        meta_end_else,
+        last,
     };
+
+    [[nodiscard]] auto ir_op_name(Op op) noexcept -> std::string_view;
 
     enum class AbsAddrTag : uint8_t {
         immediate,
         constant,
         temp,
         heap,
+        last,
     };
+
+    [[nodiscard]] auto ir_aa_tag_name(AbsAddrTag tag) noexcept -> std::string_view;
 
     struct AbsAddress {
         AbsAddrTag tag;

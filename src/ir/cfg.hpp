@@ -32,7 +32,8 @@ namespace Minuet::IR::CFG {
         [[nodiscard]] auto get_head() const& noexcept -> std::optional<const BasicBlock*>;
         [[nodiscard]] auto get_bb(int id) const& noexcept -> std::optional<const BasicBlock*>;
         [[nodiscard]] auto get_bb(int id) & noexcept -> std::optional<BasicBlock*>;
-        [[nodiscard]] auto add_bb() & -> int;
+        [[nodiscard]] auto get_newest_bb() & noexcept -> std::optional<BasicBlock*>;
+        [[maybe_unused]] auto add_bb() & -> int;
         [[nodiscard]] bool link_bb(int from_id, int to_id) & noexcept;
 
         template <template<typename> typename Pass, typename Result>
