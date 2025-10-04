@@ -11,7 +11,9 @@ fun fibo: [n] => {
 fun main: [args] => {
     def ans = fibo(30)
 
-    print(ans)
+    if ans != 832040 {
+        return 1
+    }
 
-    assertTrue(ans >= 832040)
+    return 0
 }
