@@ -6,7 +6,7 @@
 
 namespace Minuet::IR::Printing {
     void print_step(const IR::Steps::Step& step);
-    void print_cfg(const CFG::CFG& cfg);
+    void print_cfg(const CFG::CFG& cfg, uint32_t id);
     void print_ir(const CFG::FullIR& full_ir);
 }
 

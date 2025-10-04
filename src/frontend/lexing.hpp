@@ -3,6 +3,7 @@
 
 #include <concepts>
 #include <string_view>
+#include <string>
 #include <unordered_map>
 
 #include "frontend/lexicals.hpp"

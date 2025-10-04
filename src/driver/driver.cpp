@@ -1,7 +1,6 @@
 #include <set>
 #include <stack>
 
-#include "frontend/parsing.hpp"
 #include "ir/convert_ast.hpp"
 #include "ir/printing.hpp"
 #include "driver/sources.hpp"
@@ -66,6 +65,7 @@ namespace Minuet::Driver::Compilation {
             std::string src_text {read_source(next_src_path)};
 
             m_src_map.push_back(src_text);
+            m_lexer.reset_with_src(src_text);
 
             {
                 const auto source_unit_id = next_src_id;

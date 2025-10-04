@@ -33,18 +33,19 @@ namespace Minuet::IR::Printing {
         std::println();
     }
 
-    void print_cfg(const CFG::CFG& cfg) {
+    void print_cfg(const CFG::CFG& cfg, uint32_t id) {
         std::set<int> visited_ids;
         std::stack<int> frontier_ids;
 
         frontier_ids.push(0);
+        std::println("\033[1;33mCFG #{}\033[0m\n", id);
 
         while (!frontier_ids.empty()) {
             auto next_bb_id = frontier_ids.top();
             frontier_ids.pop();
             auto next_node = cfg.get_bb(next_bb_id).value();
 
-            std::println("\n\033[1;33mBasic Block #{}:\033[0m\n", next_bb_id);
+            std::println("\nBasic Block #{}:\n", next_bb_id);
 
             for (const auto& step : next_node->steps) {
                 print_step(step);
@@ -77,8 +78,11 @@ namespace Minuet::IR::Printing {
 
         std::println("\033[1;33mCFG's:\033[0m\n");
 
+        auto cfg_n = 0U;
+
         for (const auto& cfg : ir_cfgs) {
-            print_cfg(cfg);
+            print_cfg(cfg, cfg_n);
+            ++cfg_n;
         }
     }
 }

@@ -103,7 +103,7 @@ namespace Minuet::IR::Convert {
     }
 
     auto ASTConversion::record_name_aa(Utils::NameLocation mode, const std::string& name, AbsAddress aa) -> bool {
-        auto name_exists = true;
+        auto name_exists = false;
 
         switch (mode) {
             case NameLocation::global_native_slot:
@@ -134,7 +134,7 @@ namespace Minuet::IR::Convert {
                 break;
         }
 
-        return name_exists;
+        return !name_exists;
     }
 
     auto ASTConversion::lookup_name_aa(const std::string& name) noexcept -> std::optional<AbsAddress> {
@@ -183,6 +183,8 @@ namespace Minuet::IR::Convert {
             temp = resolve_constant_aa(literal_lexeme, Runtime::Value {std::stoi(literal_lexeme)});
         } else if (literal_tag == TokenType::literal_double) {
             temp = resolve_constant_aa(literal_lexeme, Runtime::Value {std::stod(literal_lexeme)});
+        } else if (literal_tag == TokenType::identifier) {
+            temp = lookup_name_aa(literal_lexeme);
         } else {
             std::string bad_literal_msg {std::format("Cannot resolve invalid literal: '{}'", literal_lexeme)};
             report_error(bad_literal_msg);
@@ -533,13 +535,11 @@ namespace Minuet::IR::Convert {
             if (!next_func_aa_opt) {
                 return false;
             }
-    
-            if (!record_name_aa(NameLocation::global_function_slot, func_name, next_func_aa_opt.value())) {
-                return false;
-            }
 
-            return true;
+            return record_name_aa(NameLocation::global_function_slot, func_name, next_func_aa_opt.value());
         }
+
+        add_cfg();
 
         auto generation_ok = true;
 
@@ -562,7 +562,12 @@ namespace Minuet::IR::Convert {
             generation_ok = emit_stmt(fun.body, source);
         }
 
+        if (generation_ok) {
+            generation_ok = apply_pending_links();
+        }
+
         m_locals.clear();
+        m_next_local_aa = 0U;
 
         return generation_ok;
     }
@@ -584,6 +589,6 @@ namespace Minuet::IR::Convert {
             return emit_expr_stmt(std::get<ExprStmt>(stmt->data), source);
         }
 
-        return false;
+        return true;
     }
 }
