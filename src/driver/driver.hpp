@@ -7,6 +7,7 @@
 #include "frontend/lexing.hpp"
 #include "frontend/parsing.hpp"
 #include "ir/cfg.hpp"
+#include "runtime/bytecode.hpp"
 
 namespace Minuet::Driver::Compilation {
     class CompileDriver {
@@ -18,7 +19,9 @@ namespace Minuet::Driver::Compilation {
 
         [[maybe_unused]] auto generate_ir(const Syntax::AST::FullAST& ast) -> std::optional<IR::CFG::FullIR>;
 
-        void operator()(const std::filesystem::path& entry_source_path);
+        [[maybe_unused]] auto generate_program(IR::CFG::FullIR& ir) -> std::optional<Runtime::Code::Program>;
+
+        [[nodiscard]] auto operator()(const std::filesystem::path& entry_source_path) -> std::optional<Runtime::Code::Program>;
 
     private:
         Frontend::Lexing::Lexer m_lexer;

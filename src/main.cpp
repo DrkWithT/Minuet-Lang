@@ -23,5 +23,12 @@ int main(int argc, char* argv[]) {
     }
 
     Driver::Compilation::CompileDriver compiler;
-    compiler(argv[1]);
+    
+    auto program_opt = compiler(argv[1]);
+
+    if (!program_opt) {
+        return 1;
+    }
+
+    // disassemble_program(program_opt.value());
 }
