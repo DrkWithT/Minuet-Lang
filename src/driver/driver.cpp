@@ -103,7 +103,7 @@ namespace Minuet::Driver::Compilation {
         return ir_opt.value();
     }
 
-    [[maybe_unused]] auto generate_program(IR::CFG::FullIR& ir) -> std::optional<Runtime::Code::Program> {
+    [[maybe_unused]] auto CompileDriver::generate_program(IR::CFG::FullIR& ir) -> std::optional<Runtime::Code::Program> {
         Codegen::Emitter emitter;
 
         return emitter(ir);

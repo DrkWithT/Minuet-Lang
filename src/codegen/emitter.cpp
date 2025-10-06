@@ -8,7 +8,6 @@
 #include "runtime/bytecode.hpp"
 #include "codegen/emitter.hpp"
 
-/// TODO: clear pending patches & reset local stack score after each bytecode emission.
 namespace Minuet::Codegen {
     using namespace Codegen::Utils;
     using IR::Steps::AbsAddrTag;
@@ -24,13 +23,13 @@ namespace Minuet::Codegen {
 
 
     Emitter::Emitter()
-    : m_local_patches {}, m_tmp_stack_slots {}, m_other_locations {}, m_result_chunks {}, m_local_stack_id {0U} {}
+    : m_local_patches {}, m_tmp_stack_slots {}, m_result_chunks {}, m_local_stack_id {} {}
 
     auto Emitter::apply(const IR::CFG::CFG &cfg) -> bool {
         return emit_cfg(cfg);
     }
 
-    auto apply([[maybe_unused]] IR::CFG::CFG& cfg) -> bool {
+    auto Emitter::apply([[maybe_unused]] IR::CFG::CFG& cfg) -> bool {
         return true;
     }
 
@@ -130,9 +129,9 @@ namespace Minuet::Codegen {
         }
     }
 
-    auto Emitter::emit_step(AbsAddress dest, Op op, AbsAddress a0) -> bool {        
-        auto dest_arg_opt = find_stack_slot_of(dest);
+    auto Emitter::emit_step(AbsAddress dest, Op op, AbsAddress a0) -> bool {
         auto a0_arg_opt = resolve_abs_addr(a0);
+        auto dest_arg_opt = resolve_abs_addr(dest);
 
         if (!dest_arg_opt || !a0_arg_opt) {
             return false;
@@ -197,9 +196,9 @@ namespace Minuet::Codegen {
             return false;
         }
 
-        auto dest_opt = find_stack_slot_of(dest);
         auto arg_0_opt = resolve_abs_addr(a0);
         auto arg_1_opt = resolve_abs_addr(a1);
+        auto dest_opt = resolve_abs_addr(dest);
 
         if (!dest_opt || !arg_0_opt || !arg_1_opt) {
             return false;
@@ -219,12 +218,16 @@ namespace Minuet::Codegen {
             .metadata = encode_inst_metadata(arg_1),
             .op = Opcode::push,
         });
+        update_stack_slot_id(Utils::StackDelta {
+            .val = 2,
+            .shrinks = false,
+        }, {});
+
         m_result_chunks.back().emplace_back(Instruction {
             .args = {0, 0, 0},
             .metadata = encode_inst_metadata(),
             .op = bin_math_or_logical_opcode,
         });
-
         update_stack_slot_id(sm_op_stack_deltas[static_cast<std::size_t>(bin_math_or_logical_opcode)], {});
 
         /// NOTE: the MOV instruction simply takes the top temporary and replaces the destination iff all other arg-slots are zeroed.
@@ -280,14 +283,17 @@ namespace Minuet::Codegen {
             m_local_patches.pop();
 
             m_result_chunks.back().at(inst_pos).args[0] = static_cast<uint16_t>(jmp_else_patch_n);
+        } else {
+            return false;
         }
 
-        return false;
+        return true;
     }
 
     auto Emitter::emit_step(Op op, AbsAddress a0) -> bool {
         auto unary_opcode_opt = ([](Op ir_op) noexcept -> std::optional<Opcode> {
             switch (ir_op) {
+                case Op::meta_load_aa:
                 case Op::push: return Opcode::push;
                 case Op::jump: return Opcode::jump;
                 case Op::ret: return Opcode::ret;
@@ -323,7 +329,6 @@ namespace Minuet::Codegen {
     }
 
     auto Emitter::emit_step(Op op, AbsAddress a0, AbsAddress a1) -> bool {
-        // todo: jump_if, jump_else, call, native_call
         auto binary_opcode_opt = ([](Op ir_op) noexcept -> std::optional<Opcode> {
             switch (ir_op) {
                 case Op::jump_if: return Opcode::jump_if;
@@ -406,10 +411,16 @@ namespace Minuet::Codegen {
         std::stack<int> bb_id_frontier;
 
         bb_id_frontier.push(0);
+        m_result_chunks.emplace_back();
 
         while (!bb_id_frontier.empty()) {
             auto next_bb_id = bb_id_frontier.top();
             bb_id_frontier.pop();
+
+            if (visited.contains(next_bb_id)) {
+                continue;
+            }
+
             auto next_bb_opt = cfg.get_bb(next_bb_id);
 
             if (!next_bb_opt) {
@@ -422,6 +433,8 @@ namespace Minuet::Codegen {
                 return false;
             }
 
+            visited.emplace(next_bb_id);
+
             if (const auto falsy_bb_id = next_bb->falsy_id; falsy_bb_id != -1 && !visited.contains(falsy_bb_id)) {
                 bb_id_frontier.push(falsy_bb_id);
             }
@@ -430,6 +443,10 @@ namespace Minuet::Codegen {
                 bb_id_frontier.push(truthy_bb_id);
             }
         }
+
+        m_local_patches = {};
+        m_tmp_stack_slots.clear();
+        m_local_stack_id = 0U;
 
         return true;
     }

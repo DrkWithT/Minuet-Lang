@@ -139,11 +139,11 @@ namespace Minuet::Codegen {
             Utils::StackDelta {.val = sm_dud_stack_delta, .shrinks = false},
             Utils::StackDelta {.val = sm_dud_stack_delta, .shrinks = false},
             Utils::StackDelta {.val = 0, .shrinks = false},
+            Utils::StackDelta {.val = 0, .shrinks = false},
         };
 
         std::stack<Utils::JumpPatch> m_local_patches;
         std::unordered_map<uint16_t, uint16_t> m_tmp_stack_slots;
-        std::unordered_map<uint16_t, Utils::PseudoArg> m_other_locations;
         std::vector<Runtime::Code::Chunk> m_result_chunks;
         // const NativeCatalog* m_catalog_p;
         uint16_t m_local_stack_id;
