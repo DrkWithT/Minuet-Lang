@@ -27,12 +27,11 @@ namespace Minuet::IR::Steps {
         "call",
         "native_call",
         "ret",
-        "#load_aa",
-        "#begin_if",
-        "#end_if",
-        "#begin_else",
-        "#end_else",
         "halt",
+        "#load_aa",
+        "#save_patch",
+        "#patch_jmp_else",
+        "#patch_jmp",
     };
 
     static constexpr std::array<std::string_view, static_cast<std::size_t>(AbsAddrTag::last)> aa_names = {

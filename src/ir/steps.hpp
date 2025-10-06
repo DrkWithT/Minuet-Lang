@@ -32,10 +32,9 @@ namespace Minuet::IR::Steps {
         ret,
         halt,
         meta_load_aa,
-        meta_begin_if,
-        meta_end_if,
-        meta_begin_else,
-        meta_end_else,
+        meta_save_patch,
+        meta_patch_jmp_else,
+        meta_patch_jmp,
         last,
     };
 

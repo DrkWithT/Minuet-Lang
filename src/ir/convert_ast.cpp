@@ -121,6 +121,10 @@ namespace Minuet::IR::Convert {
                     m_globals[name] = aa;
                 }
 
+                if (!name_exists && m_proto_main_id == -1) {
+                    m_proto_main_id = aa.id;
+                }
+
                 break;
             case NameLocation::local_slot:
                 name_exists = m_locals.contains(name);
@@ -414,10 +418,6 @@ namespace Minuet::IR::Convert {
         const auto pre_if_bb_id = m_result_cfgs.back().bb_count() - 1;
         const auto if_true_bb_id = pre_if_bb_id + 1;
 
-        m_result_cfgs.back().get_newest_bb().value()->steps.emplace_back(OperNonary {
-            .op = Op::meta_begin_if,
-        });
-
         auto cond_result_aa = emit_expr(cond.cond_expr, source);
 
         if (!cond_result_aa) {
@@ -431,6 +431,9 @@ namespace Minuet::IR::Convert {
                 .tag = AbsAddrTag::immediate,
             },
             .op = Op::jump_else,
+        });
+        m_result_cfgs.back().get_newest_bb().value()->steps.emplace_back(OperNonary {
+            .op = Op::meta_save_patch,
         });
 
         /// 2: handle the truthy body- then place a JUMP past the falsy body.
@@ -446,7 +449,13 @@ namespace Minuet::IR::Convert {
             .op = Op::jump,
         });
         m_result_cfgs.back().get_newest_bb().value()->steps.emplace_back(OperNonary {
-            .op = Op::meta_begin_else,
+            .op = Op::meta_save_patch,
+        });
+        m_result_cfgs.back().get_newest_bb().value()->steps.emplace_back(OperNonary {
+            .op = Op::nop,
+        });
+        m_result_cfgs.back().get_newest_bb().value()->steps.emplace_back(OperNonary {
+            .op = Op::meta_patch_jmp_else,
         });
         m_pending_links.push({
             .from = pre_if_bb_id,
@@ -462,7 +471,10 @@ namespace Minuet::IR::Convert {
             const auto else_body_bb_id = m_result_cfgs.back().bb_count() - 1;
 
             m_result_cfgs.back().get_newest_bb().value()->steps.emplace_back(OperNonary {
-                .op = Op::meta_end_else,
+                .op = Op::nop,
+            });
+            m_result_cfgs.back().get_newest_bb().value()->steps.emplace_back(OperNonary {
+                .op = Op::meta_patch_jmp,
             });
             m_pending_links.push({
                 .from = pre_if_bb_id,
@@ -483,7 +495,10 @@ namespace Minuet::IR::Convert {
             const auto post_if_body_bb_id = m_result_cfgs.back().add_bb();
 
             m_result_cfgs.back().get_newest_bb().value()->steps.emplace_back(OperNonary {
-                .op = Op::meta_end_if,
+                .op = Op::nop,
+            });
+            m_result_cfgs.back().get_newest_bb().value()->steps.emplace_back(OperNonary {
+                .op = Op::meta_patch_jmp_else,
             });
             m_pending_links.push({
                 .from = if_true_bb_id,
@@ -494,8 +509,6 @@ namespace Minuet::IR::Convert {
                 .to = post_if_body_bb_id,
             });
         }
-
-        // m_continuing_bb = true;
 
         return true;
     }
