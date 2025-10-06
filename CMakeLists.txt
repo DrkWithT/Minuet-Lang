@@ -13,6 +13,7 @@ else ()
     message(FATAL_ERROR "Preset invalid because it is missing the MY_FLAGS variable.")
 endif ()
 
+include_directories(${MINUET_LANG_SRC_DIR})
 add_subdirectory(${MINUET_LANG_SRC_DIR})
 # enable_testing()
 # add_subdirectory(${MINUET_LANG_UNIT_TEST_DIR})

@@ -16,6 +16,8 @@ if [[ $action = "help" ]]; then
     usage_exit 0;
 elif [[ $action = "build" && $argc -ge 2 && $argc -le 4 ]]; then
     if [[ $argc -eq 4 && "$3" = "refresh" ]]; then
+        rm -rf ./build;
+        rm -f ./compile_commands.json;
         cmake --fresh -S . -B build --preset "local-$2-build" && cmake --build build;
         build_status=$?
     else

@@ -8,7 +8,7 @@ fun fibo: [n] => {
     }
 }
 
-fun main: [args] => {
+fun main: [] => {
     def ans = fibo(30)
 
     if ans != 832040 {

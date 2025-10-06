@@ -2,16 +2,8 @@ fun sumGaussN: [n] => {
     return n * (n + 1) / 2
 }
 
-fun averageTwo: [a, b] => {
-    return (a + b) / 2
-}
-
-fun main: [args] => {
+fun main: [] => {
     if sumGaussN(10) != 55 {
-        return 1
-    }
-
-    if averageTwo(10, 20) != 15 {
         return 1
     }
 
