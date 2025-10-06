@@ -43,6 +43,11 @@ namespace Minuet::IR::Printing {
         while (!frontier_ids.empty()) {
             auto next_bb_id = frontier_ids.top();
             frontier_ids.pop();
+
+            if (visited_ids.contains(next_bb_id)) {
+                continue;
+            }
+
             auto next_node = cfg.get_bb(next_bb_id).value();
 
             std::println("\nBasic Block #{}:\n", next_bb_id);
@@ -51,6 +56,8 @@ namespace Minuet::IR::Printing {
                 print_step(step);
             }
 
+            visited_ids.insert(next_bb_id);
+
             if (const auto falsy_child_id = next_node->falsy_id; falsy_child_id != -1 && !visited_ids.contains(falsy_child_id)) {
                 frontier_ids.push(falsy_child_id);
             }
@@ -58,8 +65,6 @@ namespace Minuet::IR::Printing {
             if (const auto truthy_child_id = next_node->truthy_id; truthy_child_id != -1 && !visited_ids.contains(truthy_child_id)) {
                 frontier_ids.push(truthy_child_id);
             }
-
-            visited_ids.insert(next_bb_id);
         }
     }
 
