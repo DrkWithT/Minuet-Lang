@@ -1,7 +1,7 @@
 # README
 
 ### Brief
-_Minuet_ is a small, JS & Rust inspired language for simple scripting. Unlike shell scripting dialects across systems, this language aims to look and behave nicer for the programmer.
+_Minuet_ is a small, Python & C inspired language for simple scripting. Unlike shell scripting dialects across systems, this language aims to look and behave nicer for the programmer.
 
 ### Design Principles
  - Concise and semi-familiar syntax
@@ -47,7 +47,6 @@ _Minuet_ is a small, JS & Rust inspired language for simple scripting. Unlike sh
 ```
 
 ### Roadmap
- - **0.0.2**: Implement the parser.
  - **0.0.3**: Implement the AST to TAC-CFG converter.
- - **0.0.4**: Implement the IR to bytecode converter.
- - **0.1.0**: Implement the VM... this must pass the first 3 suite programs.
+ - **0.0.4**: Implement the IR to register VM bytecode converter.
+ - **0.1.0**: Implement the VM... this must pass the first 2 suite programs.
