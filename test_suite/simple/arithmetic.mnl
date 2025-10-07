@@ -3,7 +3,9 @@ fun sumGaussN: [n] => {
 }
 
 fun main: [] => {
-    if sumGaussN(10) != 55 {
+    def ans = sumGaussN(10)
+
+    if ans != 55 {
         return 1
     }
 

@@ -14,18 +14,14 @@ build_status=0
 
 if [[ $action = "help" ]]; then
     usage_exit 0;
-elif [[ $action = "build" && $argc -ge 2 && $argc -le 4 ]]; then
-    if [[ $argc -eq 4 && "$3" = "refresh" ]]; then
-        rm -rf ./build;
-        rm -f ./compile_commands.json;
-        cmake --fresh -S . -B build --preset "local-$2-build" && cmake --build build;
-        build_status=$?
-    else
-        cmake -S . -B build --preset "local-$2-build" && cmake --build build;
-        build_status=$?
-    fi
+elif [[ $action = "build" && $argc -ge 2 ]]; then
+    rm -rf ./build;
+    rm -f ./compile_commands.json;
+    cmake --fresh -S . -B build --preset "local-$2-build" && cmake --build build;
 
-    mv ./build/compile_commands.json .;
+    if [[ $? -eq 0 ]]; then
+        mv ./build/compile_commands.json .;
+    fi
 elif [[ $action = "unittest" && $argc -eq 1 ]]; then
     touch ./logs/all.txt;
     ctest --test-dir build --timeout 2 -V 1> ./logs/all.txt;
