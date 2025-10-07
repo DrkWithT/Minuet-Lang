@@ -2,7 +2,7 @@
 #include <print>
 
 #include "driver/driver.hpp"
-#include "codegen/disassemble.hpp"
+// #include "codegen/disassemble.hpp"
 
 constexpr auto minuet_version_major = 0;
 constexpr auto minuet_version_minor = 0;
@@ -31,5 +31,5 @@ int main(int argc, char* argv[]) {
         return 1;
     }
 
-    Codegen::print_program(program_opt.value());
+    // Codegen::print_program(program_opt.value());
 }

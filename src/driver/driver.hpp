@@ -19,7 +19,7 @@ namespace Minuet::Driver::Compilation {
 
         [[maybe_unused]] auto generate_ir(const Syntax::AST::FullAST& ast) -> std::optional<IR::CFG::FullIR>;
 
-        [[maybe_unused]] auto generate_program(IR::CFG::FullIR& ir) -> std::optional<Runtime::Code::Program>;
+        // [[maybe_unused]] auto generate_program(IR::CFG::FullIR& ir) -> std::optional<Runtime::Code::Program>;
 
         [[nodiscard]] auto operator()(const std::filesystem::path& entry_source_path) -> std::optional<Runtime::Code::Program>;
 

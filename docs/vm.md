@@ -47,7 +47,7 @@
  - `call <func-id: imm> <arg-count: imm> <local-count: imm>`: saves all special registers and caller state, prepares a register frame with size `arg_count + local_count`, and sets:
     - `RFI` to `func-id` (saved to `ret-func-id` on call frame)
     - `RIP` to 0 (saved to `ret-address` on call frame)
-    - `RBP` to the current register frame top `+ 1`
+    - `RBP` to `RFT - arg_count + 1`
  - `native_call <native-func-id: imm>`: ??
  - `ret <src: const / reg>`: places a return value to `RAV`, destroys the current register frame, and restores all special registers and caller state
  - `halt <status-code: imm>`: stops program execution with the specified `status-code`

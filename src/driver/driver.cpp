@@ -3,7 +3,7 @@
 
 #include "ir/convert_ast.hpp"
 #include "ir/printing.hpp"
-#include "codegen/emitter.hpp"
+// #include "codegen/emitter.hpp"
 #include "driver/sources.hpp"
 #include "driver/driver.hpp"
 
@@ -103,11 +103,11 @@ namespace Minuet::Driver::Compilation {
         return ir_opt.value();
     }
 
-    [[maybe_unused]] auto CompileDriver::generate_program(IR::CFG::FullIR& ir) -> std::optional<Runtime::Code::Program> {
-        Codegen::Emitter emitter;
+    // [[maybe_unused]] auto CompileDriver::generate_program(IR::CFG::FullIR& ir) -> std::optional<Runtime::Code::Program> {
+    //     Codegen::Emitter emitter;
 
-        return emitter(ir);
-    }
+    //     return emitter(ir);
+    // }
 
     auto CompileDriver::operator()(const std::filesystem::path& entry_source_path) -> std::optional<Runtime::Code::Program> {
         auto parsed_program = parse_sources(entry_source_path);
@@ -125,6 +125,8 @@ namespace Minuet::Driver::Compilation {
         /// NOTE: print the IR to check its correctness!
         print_ir(program_ir_opt.value());
 
-        return generate_program(program_ir_opt.value());
+        /// TODO: fix codegen after IR generation is completed!
+        // return generate_program(program_ir_opt.value());
+        return {};
     }
 }
