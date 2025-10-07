@@ -5,8 +5,6 @@
 namespace Minuet::IR::Steps {
     static constexpr std::array<std::string_view, static_cast<std::size_t>(Op::last)> op_names = {
         "nop",
-        "push",
-        "pop",
         "neg",
         "inc",
         "dec",
@@ -28,7 +26,6 @@ namespace Minuet::IR::Steps {
         "native_call",
         "ret",
         "halt",
-        "#load_aa",
         "#save_patch",
         "#patch_jmp_else",
         "#patch_jmp",
@@ -38,6 +35,7 @@ namespace Minuet::IR::Steps {
         "immediate",
         "constant",
         "temp",
+        "stack",
         "heap",
     };
 

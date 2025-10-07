@@ -53,7 +53,7 @@ namespace Minuet::IR::Convert {
         [[nodiscard]] auto emit_binary(const Syntax::Exprs::Binary& binary, std::string_view source) -> std::optional<Steps::AbsAddress>;
         [[nodiscard]] auto emit_call(const Syntax::Exprs::Call& call, std::string_view source) -> std::optional<Steps::AbsAddress>;
         [[nodiscard]] auto emit_assign(const Syntax::Exprs::Assign& assign, std::string_view source) -> std::optional<Steps::AbsAddress>;
-        [[nodiscard]] auto emit_expr(const Syntax::Exprs::ExprPtr& expr, std::string_view source) -> std::optional<Steps::AbsAddress>;
+        [[maybe_unused]] auto emit_expr(const Syntax::Exprs::ExprPtr& expr, std::string_view source) -> std::optional<Steps::AbsAddress>;
 
         [[nodiscard]] auto emit_expr_stmt(const Syntax::Stmts::ExprStmt& expr_stmt, std::string_view source) -> bool;
         [[nodiscard]] auto emit_def(const Syntax::Stmts::LocalDef& def, std::string_view source) -> bool;
@@ -70,8 +70,8 @@ namespace Minuet::IR::Convert {
         std::vector<Runtime::Value> m_proto_consts;
         int m_proto_main_id;
         int m_error_count;
-        uint16_t m_next_func_aa;
-        uint16_t m_next_local_aa;
+        int16_t m_next_func_aa;
+        int16_t m_next_local_aa;
         bool m_prepassing;
         // bool m_continuing_bb;
     };

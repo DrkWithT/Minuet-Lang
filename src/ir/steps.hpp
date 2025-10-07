@@ -8,8 +8,6 @@
 namespace Minuet::IR::Steps {
     enum class Op : uint8_t {
         nop,
-        push,
-        pop,
         neg,
         inc,
         dec,
@@ -31,7 +29,6 @@ namespace Minuet::IR::Steps {
         native_call,
         ret,
         halt,
-        meta_load_aa,
         meta_save_patch,
         meta_patch_jmp_else,
         meta_patch_jmp,
@@ -44,6 +41,7 @@ namespace Minuet::IR::Steps {
         immediate,
         constant,
         temp,
+        stack,
         heap,
         last,
     };
@@ -52,7 +50,7 @@ namespace Minuet::IR::Steps {
 
     struct AbsAddress {
         AbsAddrTag tag;
-        uint16_t id;
+        int16_t id;
     };
 
     struct TACUnary {

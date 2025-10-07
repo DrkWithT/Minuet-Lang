@@ -90,7 +90,7 @@ namespace Minuet::IR::Convert {
             return {m_globals[literal]};
         }
 
-        const auto next_const_id = static_cast<uint16_t>(m_proto_consts.size());
+        const auto next_const_id = static_cast<int16_t>(m_proto_consts.size());
         const auto next_aa = AbsAddress {
             .tag = AbsAddrTag::constant,
             .id = next_const_id,
@@ -160,7 +160,7 @@ namespace Minuet::IR::Convert {
             return false;
         }
 
-        auto& recent_wip_cfg = m_result_cfgs[m_result_cfgs.size() - 1];
+        auto& recent_wip_cfg = m_result_cfgs.back();
 
         while (!m_pending_links.empty()) {
             const auto [from_id, to_id] = m_pending_links.front();
@@ -246,7 +246,7 @@ namespace Minuet::IR::Convert {
             case Operator::at_most:
             case Operator::at_least:
                 {
-                    if (auto dest_aa = gen_temp_aa(); dest_aa) {   
+                    if (auto dest_aa = gen_temp_aa(); dest_aa) {
                         auto result_aa = dest_aa.value();
 
                         m_result_cfgs.back().get_newest_bb().value()->steps.emplace_back(TACBinary {
@@ -282,24 +282,26 @@ namespace Minuet::IR::Convert {
             return {};
         }
 
-        /// NOTE: CALLs will take the function ID and then N (stack argument count).
-        const auto arg_count = static_cast<uint16_t>(call.args.size());
+        const auto call_result_slot_aa = AbsAddress {
+            .id = m_next_local_aa,
+            .tag = AbsAddrTag::temp,
+        };
 
-        for (const auto& param : call.args) {
-            if (auto arg_aa_opt = emit_expr(param, source); arg_aa_opt) {
-                m_result_cfgs.back().get_newest_bb().value()->steps.emplace_back( OperUnary {
-                    .arg_0 = arg_aa_opt.value(),
-                    .op = Op::meta_load_aa,
-                });
-            } else {
-                return {};
+        /// NOTE: Any call will take the function ID and then N (stack argument count).
+        const auto arg_count = static_cast<int16_t>(call.args.size());
+
+        for (int16_t arg_idx = 0; arg_idx < arg_count; ++arg_idx) {
+            if (auto arg_aa_opt = emit_expr(call.args.at(arg_idx), source); arg_aa_opt) {
+                if (auto arg_dest_aa_opt = gen_temp_aa(); arg_dest_aa_opt) {
+                    m_result_cfgs.back().get_newest_bb().value()->steps.emplace_back(TACUnary {
+                        .dest = arg_dest_aa_opt.value(),
+                        .arg_0 = arg_aa_opt.value(),
+                        .op = Op::nop,
+                    });
+
+                    continue;
+                }
             }
-        }
-
-        auto call_result_opt = gen_temp_aa();
-
-        if (!call_result_opt) {
-            report_error("convert_ast.cpp: ASTConversion::emit_call(): Failed to generate abstract address in IR.");
 
             return {};
         }
@@ -313,7 +315,7 @@ namespace Minuet::IR::Convert {
             .op = Op::call,
         });
 
-        return call_result_opt;
+        return call_result_slot_aa;
     }
 
     auto ASTConversion::emit_assign(const Syntax::Exprs::Assign& assign, std::string_view source) -> std::optional<AbsAddress> {
@@ -359,26 +361,22 @@ namespace Minuet::IR::Convert {
     auto ASTConversion::emit_def(const Syntax::Stmts::LocalDef& def, std::string_view source) -> bool {
         std::string var_name = std::format("{}", token_to_sv(def.name, source));
         auto var_init_opt = emit_expr(def.init_expr, source);
+        auto var_dest_opt = gen_temp_aa();
 
-        if (!var_init_opt) {
-            return false;
-        }
-
-        auto var_init_dest_aa = gen_temp_aa();
-
-        if (!var_init_dest_aa) {
+        if (!var_init_opt || !var_dest_opt) {
             return false;
         }
 
         auto var_init_aa = var_init_opt.value();
+        auto var_dest_aa = var_dest_opt.value();
 
         m_result_cfgs.back().get_newest_bb().value()->steps.emplace_back(TACUnary {
-            .dest = var_init_dest_aa.value(),
+            .dest = var_dest_aa,
             .arg_0 = var_init_aa,
             .op = Op::nop,
         });
 
-        if (!record_name_aa(NameLocation::local_slot, var_name, var_init_dest_aa.value())) {
+        if (!record_name_aa(NameLocation::local_slot, var_name, var_dest_aa)) {
             const auto def_src_beg = def.name.start;
             const auto def_name_len = def.name.end - def_src_beg + 1;
             const auto def_src_len = def.init_expr->src_end - def_src_beg + 1;
@@ -441,22 +439,6 @@ namespace Minuet::IR::Convert {
             return false;
         }
 
-        m_result_cfgs.back().get_newest_bb().value()->steps.emplace_back(OperUnary {
-            .arg_0 = {
-                .id = 0,
-                .tag = AbsAddrTag::immediate,
-            },
-            .op = Op::jump,
-        });
-        m_result_cfgs.back().get_newest_bb().value()->steps.emplace_back(OperNonary {
-            .op = Op::meta_save_patch,
-        });
-        m_result_cfgs.back().get_newest_bb().value()->steps.emplace_back(OperNonary {
-            .op = Op::nop,
-        });
-        m_result_cfgs.back().get_newest_bb().value()->steps.emplace_back(OperNonary {
-            .op = Op::meta_patch_jmp_else,
-        });
         m_pending_links.push({
             .from = pre_if_bb_id,
             .to = if_true_bb_id,
@@ -464,6 +446,23 @@ namespace Minuet::IR::Convert {
 
         /// 3: handle the falsy body if present?
         if (cond.else_body) {
+            m_result_cfgs.back().get_newest_bb().value()->steps.emplace_back(OperUnary {
+                .arg_0 = {
+                    .id = 0,
+                    .tag = AbsAddrTag::immediate,
+                },
+                .op = Op::jump,
+            });
+            m_result_cfgs.back().get_newest_bb().value()->steps.emplace_back(OperNonary {
+                .op = Op::meta_save_patch,
+            });
+            m_result_cfgs.back().get_newest_bb().value()->steps.emplace_back(OperNonary {
+                .op = Op::nop,
+            });
+            m_result_cfgs.back().get_newest_bb().value()->steps.emplace_back(OperNonary {
+                .op = Op::meta_patch_jmp_else,
+            });
+
             if (!emit_stmt(cond.else_body, source)) {
                 return false;
             }
@@ -588,18 +587,18 @@ namespace Minuet::IR::Convert {
     auto ASTConversion::emit_stmt(const Syntax::Stmts::StmtPtr& stmt, std::string_view source) -> bool {
         using namespace Syntax::Stmts;
 
-        if (std::holds_alternative<Function>(stmt->data)) {
-            return emit_function(std::get<Function>(stmt->data), source);
-        } else if (std::holds_alternative<Block>(stmt->data)) {
-            return emit_block(std::get<Block>(stmt->data), source);
-        } else if (std::holds_alternative<Return>(stmt->data)) {
-            return emit_return(std::get<Return>(stmt->data), source);
-        } else if (std::holds_alternative<If>(stmt->data)) {
-            return emit_if(std::get<If>(stmt->data), source);
-        } else if (std::holds_alternative<LocalDef>(stmt->data)) {
-            return emit_def(std::get<LocalDef>(stmt->data), source);
-        } else if (std::holds_alternative<ExprStmt>(stmt->data)) {
-            return emit_expr_stmt(std::get<ExprStmt>(stmt->data), source);
+        if (auto func_p = std::get_if<Function>(&stmt->data); func_p) {
+            return emit_function(*func_p, source);
+        } else if (auto block_p = std::get_if<Block>(&stmt->data); block_p) {
+            return emit_block(*block_p, source);
+        } else if (auto ret_p = std::get_if<Return>(&stmt->data); ret_p) {
+            return emit_return(*ret_p, source);
+        } else if (auto if_p = std::get_if<If>(&stmt->data); if_p) {
+            return emit_if(*if_p, source);
+        } else if (auto def_p = std::get_if<LocalDef>(&stmt->data); def_p) {
+            return emit_def(*def_p, source);
+        } else if (auto expr_stmt_p = std::get_if<ExprStmt>(&stmt->data); expr_stmt_p) {
+            return emit_expr_stmt(*expr_stmt_p, source);
         }
 
         return true;
