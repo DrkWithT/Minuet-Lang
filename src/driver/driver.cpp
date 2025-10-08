@@ -2,7 +2,7 @@
 #include <stack>
 
 #include "ir/convert_ast.hpp"
-#include "ir/printing.hpp"
+// #include "ir/printing.hpp"
 #include "codegen/emitter.hpp"
 #include "driver/sources.hpp"
 #include "driver/driver.hpp"
@@ -14,7 +14,7 @@ namespace Minuet::Driver::Compilation {
     using Syntax::AST::FullAST;
     using IR::CFG::FullIR;
     using IR::Convert::ASTConversion;
-    using IR::Printing::print_ir;
+    // using IR::Printing::print_ir;
     using Driver::Sources::read_source;
 
     CompileDriver::CompileDriver()
@@ -123,7 +123,7 @@ namespace Minuet::Driver::Compilation {
         }
 
         /// NOTE: print the IR to check its correctness!
-        print_ir(program_ir_opt.value());
+        // print_ir(program_ir_opt.value());
 
         return generate_program(program_ir_opt.value());
     }
