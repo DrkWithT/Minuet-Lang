@@ -14,17 +14,20 @@
     - `RFV`: flag value (for comparisons)
  - Will have a heap and GC.
 
-### Instruction Encoding (from MSB to LSB)
+### Instruction Encoding (from LSB to MSB)
  - Opcode: 1 unsigned byte
  - Metadata: 1 unsigned short
     - `2` prefix bits for arity
     - `4` bits per argument's address mode: `imm, const, reg, heap`
  - Args: `0` to `3` signed 16-bit integers
 
+### Call Frame Format
+ - Old `RFI` & `RIP` values for a "caller-return address"
+ - Old `RBP` value
+ - Old `RFT` value
+
 ### Opcodes:
  - `nop`: does nothing except increment `RIP`
- - `save`: preserves special register values on the stack
- - `restore`: reloads saved special registers from stack
  - `load_const <dest-reg> <imm>`: places a constant by index into a register
  - `mov <dest-reg> <src-reg>`: places a copied source register value to a destination register
  - `neg <reg>`: negates a register value in-place

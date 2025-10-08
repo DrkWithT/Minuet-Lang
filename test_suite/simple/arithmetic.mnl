@@ -2,6 +2,10 @@ fun sumGaussN: [n] => {
     return n * (n + 1) / 2
 }
 
+fun avgTwo: [x, y] => {
+    return (x + y) / 2
+}
+
 fun main: [] => {
     def ans = sumGaussN(10)
 
