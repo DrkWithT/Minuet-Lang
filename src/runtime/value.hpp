@@ -55,11 +55,11 @@ namespace Minuet::Runtime {
         [[nodiscard]] auto operator+(const Value& arg) const& -> Value;
         [[nodiscard]] auto operator-(const Value& arg) const& -> Value;
 
-        [[nodiscard]] auto operator*=(const Value& arg) -> Value&;
-        [[nodiscard]] auto operator/=(const Value& arg) -> Value&;
-        [[nodiscard]] auto operator%=(const Value& arg) -> Value&;
-        [[nodiscard]] auto operator+=(const Value& arg) -> Value&;
-        [[nodiscard]] auto operator-=(const Value& arg) -> Value&;
+        auto operator*=(const Value& arg) -> Value&;
+        auto operator/=(const Value& arg) -> Value&;
+        auto operator%=(const Value& arg) -> Value&;
+        auto operator+=(const Value& arg) -> Value&;
+        auto operator-=(const Value& arg) -> Value&;
 
         [[nodiscard]] auto operator==(const Value& arg) const& -> bool;
         [[nodiscard]] auto operator<(const Value& arg) const& -> bool;

@@ -44,7 +44,7 @@ namespace Minuet::Runtime::VM {
     private:
         [[nodiscard]] auto fetch_value(Code::ArgMode mode, int16_t id) noexcept -> std::optional<Value>;
 
-        [[maybe_unused]] auto push_value(Value value) noexcept -> bool;
+        [[maybe_unused]] auto push_value(Value&& value) noexcept -> bool;
         [[nodiscard]] auto pop_value() noexcept -> std::optional<Value>;
 
         void handle_load_const(uint16_t metadata, int16_t dest, int16_t const_id) noexcept;

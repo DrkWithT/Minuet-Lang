@@ -166,7 +166,7 @@ namespace Minuet::Runtime::VM {
         }
     }
 
-    auto Engine::push_value(Value value) noexcept -> bool {
+    auto Engine::push_value(Value&& value) noexcept -> bool {
         if (m_rsp >= m_stack_limit) {
             return false;
         }
@@ -182,11 +182,11 @@ namespace Minuet::Runtime::VM {
             return {};
         }
 
-        auto temp = m_stack[m_rsp];
+        const auto old_rsp = m_rsp;
 
         --m_rsp;
 
-        return temp;
+        return m_stack[old_rsp];
     }
 
     void Engine::handle_load_const([[maybe_unused]] uint16_t metadata, int16_t dest, int16_t const_id) noexcept {
@@ -199,8 +199,8 @@ namespace Minuet::Runtime::VM {
 
         const auto real_mem_dest_id = m_rbp + dest;
 
-        m_rft = std::max(m_rft, real_mem_dest_id);
         m_memory[real_mem_dest_id] = temp_const.value();
+        m_rft = std::max(m_rft, real_mem_dest_id);
         ++m_rip;
     }
 
@@ -215,8 +215,8 @@ namespace Minuet::Runtime::VM {
 
         const auto real_mem_dest_id = m_rbp + dest;
 
+        m_memory[real_mem_dest_id] = std::move(src_value_opt.value());
         m_rft = std::max(m_rft, real_mem_dest_id);
-        m_memory[real_mem_dest_id] = src_value_opt.value();
         ++m_rip;
     }
 
@@ -252,7 +252,8 @@ namespace Minuet::Runtime::VM {
         }
 
         const auto real_mem_loc = m_rbp + dest;
-        m_memory[real_mem_loc] = lhs_opt.value() * rhs_opt.value();
+        m_memory[real_mem_loc] = std::move(lhs_opt.value());
+        m_memory[real_mem_loc] *= rhs_opt.value();
         m_rft = std::max(m_rft, real_mem_loc);
         ++m_rip;
     }
@@ -314,7 +315,8 @@ namespace Minuet::Runtime::VM {
 
         const auto real_mem_loc = m_rbp + dest;
 
-        m_memory[real_mem_loc] = lhs_opt.value() + rhs_opt.value();
+        m_memory[real_mem_loc] = std::move(lhs_opt.value());
+        m_memory[real_mem_loc] += rhs_opt.value();
         m_rft = std::max(m_rft, real_mem_loc);
         ++m_rip;
     }
@@ -332,7 +334,8 @@ namespace Minuet::Runtime::VM {
 
         const auto real_mem_loc = m_rbp + dest;
 
-        m_memory[real_mem_loc] = lhs_opt.value() - rhs_opt.value();
+        m_memory[real_mem_loc] = lhs_opt.value();
+        m_memory[real_mem_loc] -= rhs_opt.value();
         m_rft = std::max(m_rft, real_mem_loc);
         ++m_rip;
     }
@@ -398,7 +401,7 @@ namespace Minuet::Runtime::VM {
         const auto real_mem_loc = m_rbp + dest;
 
         m_rfv = lhs_opt.value() < rhs_opt.value();
-        m_memory[real_mem_loc] = {m_rfv};
+        m_memory[real_mem_loc] = m_rfv;
         m_rft = std::max(m_rft, real_mem_loc);
         ++m_rip;
     }
@@ -536,7 +539,7 @@ namespace Minuet::Runtime::VM {
             return;
         }
 
-        m_memory[m_rbp] = ret_src_opt.value();
+        m_memory[m_rbp] = std::move(ret_src_opt.value());
 
         /// 2. Restore the caller's call state
         auto [caller_rfi, caller_rip, caller_rbp, caller_rft] = m_call_frames.back();
