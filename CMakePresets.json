@@ -24,7 +24,18 @@
                 "CMAKE_EXPORT_COMPILE_COMMANDS": "ON",
                 "CMAKE_CXX_STANDARD": "23",
                 "CMAKE_CXX_EXTENSIONS": "OFF",
-                "MY_FLAGS": "-Wall;-Wextra;-Wpedantic;-Werror;-O2"
+                "MY_FLAGS": "-Wall;-Wextra;-Wpedantic;-Werror;-O3"
+            }
+        },
+        {
+            "name": "local-profile-build",
+            "generator": "Ninja",
+            "binaryDir": "${sourceDir}/build/release",
+            "cacheVariables": {
+                "CMAKE_EXPORT_COMPILE_COMMANDS": "ON",
+                "CMAKE_CXX_STANDARD": "23",
+                "CMAKE_CXX_EXTENSIONS": "OFF",
+                "MY_FLAGS": "-Wall;-Wextra;-Wpedantic;-Werror;-g;-O3"
             }
         }
     ]

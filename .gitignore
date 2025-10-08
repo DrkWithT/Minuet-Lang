@@ -44,3 +44,5 @@ compile_commands.json
 # Other
 .env
 .vscode/
+minuet_prof.json
+*.zip

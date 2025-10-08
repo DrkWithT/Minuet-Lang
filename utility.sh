@@ -1,7 +1,7 @@
 argc=$#
 
 usage_exit() {
-    echo "Usage: utility.sh [help | build | unittest | run]\n\tutility.sh build <preset> 'refresh'?\n\tutility.sh unittest\n\tutility.sh run <args>";
+    echo "Usage: utility.sh [help | build | unittest | run]\n\tutility.sh build <preset>\n\tutility.sh unittest\n\tutility.sh run <args>\n\tprofile <minuet-lang-file>";
     exit $1;
 }
 
@@ -33,6 +33,8 @@ elif [[ $action = "unittest" && $argc -eq 1 ]]; then
     fi
 elif [[ $action = "run" ]]; then
     ./build/src/minuetm "${@:2}" && echo "\033[1;32mRUN OK\033[0m" || echo "\033[1;33mRUN FAILED\033[0m"
+elif [[ $action = "profile" && $argc -eq 2 ]]; then
+    samply record --save-only -o minuet_prof.json -- ./build/src/minuetm $2
 else
     usage_exit 1;
 fi
