@@ -37,6 +37,18 @@ namespace Minuet::Runtime {
             }
         }
 
+        template <typename BoxedT>
+        [[nodiscard]] auto unbox_type() noexcept -> std::optional<BoxedT> {
+            if (std::holds_alternative<BoxedT>(m_data)) {
+                return std::get<BoxedT>(m_data);
+            }
+
+            return {};
+        }
+
+        [[nodiscard]] auto is_none() const& -> bool;
+        [[nodiscard]] auto negate() -> bool;
+
         [[nodiscard]] auto operator*(const Value& arg) const& -> Value;
         [[nodiscard]] auto operator/(const Value& arg) const& -> Value;
         [[nodiscard]] auto operator%(const Value& arg) const& -> Value;
@@ -48,6 +60,12 @@ namespace Minuet::Runtime {
         [[nodiscard]] auto operator%=(const Value& arg) -> Value&;
         [[nodiscard]] auto operator+=(const Value& arg) -> Value&;
         [[nodiscard]] auto operator-=(const Value& arg) -> Value&;
+
+        [[nodiscard]] auto operator==(const Value& arg) const& -> bool;
+        [[nodiscard]] auto operator<(const Value& arg) const& -> bool;
+        [[nodiscard]] auto operator>(const Value& arg) const& -> bool;
+        [[nodiscard]] auto operator<=(const Value& arg) const& -> bool;
+        [[nodiscard]] auto operator>=(const Value& arg) const& -> bool;
 
         [[nodiscard]] auto to_string() const& -> std::string;
 

@@ -13,6 +13,22 @@ namespace Minuet::Runtime {
     Value::Value(double d)
     : m_data {d}, m_tag {ValTag::flt64} {}
 
+    [[nodiscard]] auto Value::is_none() const& -> bool {
+        return m_tag == ValTag::none;
+    }
+
+    [[nodiscard]] auto Value::negate() -> bool {
+        if (m_tag == ValTag::int32) {
+            std::get<int>(m_data) = -std::get<int>(m_data);
+            return true;
+        } else if (m_tag == ValTag::flt64) {
+            std::get<double>(m_data) = -std::get<double>(m_data);
+            return true;
+        }
+
+        return false;
+    }
+
     [[nodiscard]] auto Value::operator*(const Value& arg) const& -> Value {
         if (m_tag != arg.m_tag) {
             return {};
@@ -229,6 +245,71 @@ namespace Minuet::Runtime {
         }
 
         return *this;
+    }
+
+    auto Value::operator==(const Value& arg) const& -> bool {
+        if (m_tag != arg.m_tag) {
+            return false;
+        }
+
+        switch (m_tag) {
+            case ValTag::boolean: return std::get<bool>(m_data) == std::get<bool>(arg.m_data);
+            case ValTag::int32: return std::get<int>(m_data) == std::get<int>(arg.m_data);
+            case ValTag::flt64: return std::get<double>(m_data) == std::get<double>(arg.m_data);
+            default: return true;
+        }
+    }
+
+    auto Value::operator<(const Value& arg) const& -> bool {
+        if (m_tag != arg.m_tag) {
+            return false;
+        }
+
+        switch (m_tag) {
+            case ValTag::boolean: return std::get<bool>(m_data) < std::get<bool>(arg.m_data);
+            case ValTag::int32: return std::get<int>(m_data) < std::get<int>(arg.m_data);
+            case ValTag::flt64: return std::get<double>(m_data) < std::get<double>(arg.m_data);
+            default: return true;
+        }
+    }
+
+    auto Value::operator>(const Value& arg) const& -> bool {
+        if (m_tag != arg.m_tag) {
+            return false;
+        }
+
+        switch (m_tag) {
+            case ValTag::boolean: return std::get<bool>(m_data) > std::get<bool>(arg.m_data);
+            case ValTag::int32: return std::get<int>(m_data) > std::get<int>(arg.m_data);
+            case ValTag::flt64: return std::get<double>(m_data) > std::get<double>(arg.m_data);
+            default: return true;
+        }
+    }
+
+    auto Value::operator<=(const Value& arg) const& -> bool {
+        if (m_tag != arg.m_tag) {
+            return false;
+        }
+
+        switch (m_tag) {
+            case ValTag::boolean: return std::get<bool>(m_data) <= std::get<bool>(arg.m_data);
+            case ValTag::int32: return std::get<int>(m_data) <= std::get<int>(arg.m_data);
+            case ValTag::flt64: return std::get<double>(m_data) <= std::get<double>(arg.m_data);
+            default: return true;
+        }
+    }
+
+    auto Value::operator>=(const Value& arg) const& -> bool {
+        if (m_tag != arg.m_tag) {
+            return false;
+        }
+
+        switch (m_tag) {
+            case ValTag::boolean: return std::get<bool>(m_data) >= std::get<bool>(arg.m_data);
+            case ValTag::int32: return std::get<int>(m_data) >= std::get<int>(arg.m_data);
+            case ValTag::flt64: return std::get<double>(m_data) >= std::get<double>(arg.m_data);
+            default: return true;
+        }
     }
 
     auto Value::to_string() const& -> std::string {
