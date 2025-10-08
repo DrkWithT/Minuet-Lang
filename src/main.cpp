@@ -7,8 +7,8 @@
 #include "runtime/vm.hpp"
 
 constexpr auto minuet_version_major = 0;
-constexpr auto minuet_version_minor = 0;
-constexpr auto minuet_version_patch = 1;
+constexpr auto minuet_version_minor = 1;
+constexpr auto minuet_version_patch = 0;
 
 using namespace Minuet;
 
@@ -57,7 +57,7 @@ int main(int argc, char* argv[]) {
             std::println("\033[1;32mStatus OK\033[0m\n");
             return 0;
         default:
-            std::println(std::cerr, "\033[1;31mRuntime Error: Exited with ExecStatus #{}, see vm.md for details.\n", static_cast<int>(exec_status));
+            std::println(std::cerr, "\033[1;31mRuntime Error: Exited with ExecStatus #{}, see vm.md for details.\033[0m\n", static_cast<int>(exec_status));
             return 1;
     }
 }

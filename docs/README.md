@@ -47,6 +47,4 @@ _Minuet_ is a small, Python & C inspired language for simple scripting. Unlike s
 ```
 
 ### Roadmap
- - **0.0.3**: Implement the AST to TAC-CFG converter.
- - **0.0.4**: Implement the IR to register VM bytecode converter.
- - **0.1.0**: Implement the VM... this must pass the first 2 suite programs.
+ - Optimize VM to go under 2s for a naively recursive fibonacci 35.
