@@ -1,0 +1,363 @@
+#include <iostream>
+#include <print>
+#include <utility>
+#include <set>
+#include <stack>
+
+#include "ir/steps.hpp"
+#include "ir/cfg.hpp"
+#include "runtime/bytecode.hpp"
+#include "codegen/emitter.hpp"
+
+namespace Minuet::Codegen {
+    using namespace Codegen::Utils;
+    using IR::Steps::Op;
+    using IR::Steps::Step;
+    using IR::Steps::AbsAddrTag;
+    using IR::CFG::FullIR;
+    using Runtime::Code::Opcode;
+    using Runtime::Code::ArgMode;
+    using Runtime::Code::Instruction;
+    using Runtime::Code::Chunk;
+    using Runtime::Code::Program;
+
+    Emitter::Emitter()
+    : m_result_chunks {}, m_patches {}, m_next_fun_id {0} {}
+
+    auto Emitter::operator()(FullIR& ir) -> std::optional<Program> {
+        auto& [ir_cfgs, ir_constants, ir_main_fn_id] = ir;
+
+        auto cfg_count = 0;
+        for (const auto& cfg : ir_cfgs) {
+            if (!emit_chunk(cfg)) {
+                std::println(std::cerr, "Codegen Error: Failed to emit code chunk for CFG #{}", cfg_count);
+                return {};
+            }
+
+            ++cfg_count;
+        }
+
+        return Program {
+            .chunks = std::exchange(m_result_chunks, {}),
+            .constants = std::exchange(ir.constants, {}),
+            .entry_id = ir.main_id,
+        };
+    }
+
+
+    auto Emitter::translate_value_aa(IR::Steps::AbsAddress aa) noexcept -> std::optional<Utils::PseudoArg> {
+        const auto [aa_tag, aa_value] = aa;
+
+        const auto pseudo_arg_tag = ([](AbsAddrTag aa_tag) noexcept -> std::optional<ArgMode> {
+            switch (aa_tag) {
+                case AbsAddrTag::immediate: return ArgMode::immediate;
+                case AbsAddrTag::constant: return ArgMode::constant;
+                case AbsAddrTag::temp: return ArgMode::reg;
+                case AbsAddrTag::stack:
+                case AbsAddrTag::heap:
+                default: return {};
+            }
+        })(aa_tag);
+
+        if (!pseudo_arg_tag) {
+            return {};
+        }
+
+        return PseudoArg {
+            .value = aa_value,
+            .tag = pseudo_arg_tag.value(),
+        };
+    }
+
+    auto Emitter::gen_function_id() noexcept -> std::optional<int16_t> {
+        if (const auto next_func_id = m_next_fun_id; next_func_id < std::numeric_limits<int16_t>::max()) {
+            ++m_next_fun_id;
+
+            return next_func_id;
+        }
+
+        return {};
+    }
+
+    auto Emitter::emit_tac_unary(const IR::Steps::TACUnary& tac_unary) -> bool {
+        const auto& [dest_aa, arg_0_aa, op] = tac_unary;
+
+        auto dest_opt = translate_value_aa(dest_aa);
+        auto arg_0_opt = translate_value_aa(arg_0_aa);
+
+        if (!dest_opt || !arg_0_opt) {
+            return false;
+        }
+
+        auto dest = dest_opt.value();
+        auto arg_0 = arg_0_opt.value();
+
+        if (op == Op::nop) {
+            m_result_chunks.back().emplace_back(Instruction {
+                .args = {dest.value, arg_0.value, 0},
+                .metadata = Utils::encode_metadata(dest, arg_0),
+                .op = Opcode::mov,
+            });
+
+            return true;
+        } else if (op == Op::neg) {
+            if (dest == arg_0) {
+                m_result_chunks.back().emplace_back(Instruction {
+                    .args = {dest.value, 0, 0},
+                    .metadata = encode_metadata(dest),
+                    .op = Opcode::neg,
+                });
+            } else {
+                m_result_chunks.back().emplace_back(Instruction {
+                    .args = {dest.value, arg_0.value, 0},
+                    .metadata = encode_metadata(dest, arg_0),
+                    .op = Opcode::mov,
+                });
+                m_result_chunks.back().emplace_back(Instruction {
+                    .args = {dest.value, 0, 0},
+                    .metadata = encode_metadata(dest),
+                    .op = Opcode::neg,
+                });
+            }
+
+            return true;
+        }
+
+        return false;
+    }
+
+    auto Emitter::emit_tac_binary(const IR::Steps::TACBinary& tac_binary) -> bool {
+        const auto& [dest_aa, arg_0, arg_1, op] = tac_binary;
+
+        const auto opcode_opt = ([](Op ir_op) noexcept -> std::optional<Opcode> {
+            switch (ir_op) {
+                case Op::mul: return Opcode::mul;
+                case Op::div: return Opcode::div;
+                case Op::mod: return Opcode::mod;
+                case Op::add: return Opcode::add;
+                case Op::sub: return Opcode::sub;
+                case Op::equ: return Opcode::equ;
+                case Op::neq: return Opcode::neq;
+                case Op::lt: return Opcode::lt;
+                case Op::gt: return Opcode::gt;
+                case Op::lte: return Opcode::lte;
+                case Op::gte: return Opcode::gte;
+                default: return {};
+            }
+        })(op);
+
+        if (!opcode_opt) {
+            return false;
+        }
+
+        const auto opcode = opcode_opt.value();
+        auto dest_opt = translate_value_aa(dest_aa);
+        auto arg_0_opt = translate_value_aa(arg_0);
+        auto arg_1_opt = translate_value_aa(arg_1);
+
+        if (!dest_opt || !arg_0_opt || !arg_1_opt) {
+            return false;
+        }
+
+        const auto dest = dest_opt.value();
+        const auto a0 = arg_0_opt.value();
+        const auto a1 = arg_1_opt.value();
+
+        m_result_chunks.back().emplace_back(Instruction {
+            .args = {dest.value, a0.value, a1.value},
+            .metadata = Utils::encode_metadata(dest, a0, a1),
+            .op = opcode,
+        });
+
+        return true;
+    }
+
+    auto Emitter::emit_oper_nonary(const IR::Steps::OperNonary& oper_nonary) -> bool {
+        const auto& [op] = oper_nonary;
+
+        if (op == Op::nop) {
+            m_result_chunks.back().emplace_back(Instruction {
+                .args = {0, 0, 0},
+                .metadata = Utils::encode_metadata(),
+                .op = Opcode::nop,
+            });
+
+            return true;
+        } else if (op == Op::meta_save_patch) {
+            /// NOTE: Add support for backwards JUMP patching later for constructs, including while loops- Add JUMP_IF patching support too?
+            const auto patchable_ip = m_result_chunks.back().size() - 1;
+            
+            m_patches.emplace_back(Utils::Patch {
+                .instruction_pos = patchable_ip,
+                .target_ip = 0,
+                .cf_forward = true,
+            });
+
+            return true;
+        } else if (op == Op::meta_patch_jmp) {
+            /// NOTE: Add support for backwards JUMP patching later for constructs, including while loops!
+            const auto patched_jmp_ip = m_result_chunks.back().size() - 1;
+            const auto patch = m_patches.back();
+
+            m_patches.pop_back();
+            m_result_chunks.back()[patch.instruction_pos].args[0] = patched_jmp_ip;
+
+            return true;
+        } else if (op == Op::meta_patch_jmp_else) {
+            const auto patched_jmp_else_ip = m_result_chunks.back().size() - 1;
+            const auto patch = m_patches.back();
+
+            m_patches.pop_back();
+            m_result_chunks.back()[patch.instruction_pos].args[0] = patched_jmp_else_ip;
+
+            return true;
+        }
+
+        return false;
+    }
+
+    auto Emitter::emit_oper_unary(const IR::Steps::OperUnary& oper_unary) -> bool {
+        const auto& [aa_0, op] = oper_unary;
+        const auto opcode_opt = ([](Op ir_op) noexcept -> std::optional<Opcode> {
+            switch (ir_op) {
+                case Op::jump: return Opcode::jump;
+                case Op::jump_if: return Opcode::jump_if;
+                case Op::jump_else: return Opcode::jump_else;
+                case Op::ret: return Opcode::ret;
+                case Op::halt: return Opcode::halt;
+                default: return {};
+            }
+        })(op);
+
+        if (!opcode_opt) {
+            return false;
+        }
+
+        const auto opcode = opcode_opt.value();
+        auto arg_0_opt = translate_value_aa(aa_0);
+
+        if (!arg_0_opt) {
+            return false;
+        }
+
+        const auto arg_0 = arg_0_opt.value();
+
+        m_result_chunks.back().emplace_back(Instruction {
+            .args = {arg_0.value, 0, 0},
+            .metadata = Utils::encode_metadata(arg_0),
+            .op = opcode,
+        });
+
+        return true;
+    }
+
+    auto Emitter::emit_oper_binary(const IR::Steps::OperBinary& oper_binary) -> bool {
+        const auto [aa_0, aa_1, op] = oper_binary;
+        const auto opcode_opt = ([](Op ir_op) noexcept -> std::optional<Opcode> {
+            switch (ir_op) {
+                case Op::call: return Opcode::call;
+                case Op::native_call: return Opcode::native_call;
+                default: return {};
+            }
+        })(op);
+
+        if (!opcode_opt) {
+            return false;
+        }
+
+        const auto opcode = opcode_opt.value();
+        auto arg_0_opt = translate_value_aa(aa_0);
+        auto arg_1_opt = translate_value_aa(aa_1);
+
+        if (!arg_0_opt || !arg_1_opt) {
+            return false;
+        }
+
+        const auto arg_0 = arg_0_opt.value();
+        const auto arg_1 = arg_1_opt.value();
+
+        m_result_chunks.back().emplace_back(Instruction {
+            .args = {arg_0.value, arg_1.value},
+            .metadata = Utils::encode_metadata(arg_0, arg_1),
+            .op = opcode,
+        });
+
+        return true;
+    }
+
+    auto Emitter::emit_step(const IR::Steps::Step& step) -> bool {
+        if (auto tac_unary_p = std::get_if<IR::Steps::TACUnary>(&step); tac_unary_p) {
+            /// NOTE: handle TAC SSA (1 operand)
+            return emit_tac_unary(*tac_unary_p);
+        } else if (auto tac_binary_p = std::get_if<IR::Steps::TACBinary>(&step); tac_binary_p) {
+            /// NOTE: handle TAC SSA (2 operands)
+            return emit_tac_binary(*tac_binary_p);
+        } else if (auto oper_nonary_p = std::get_if<IR::Steps::OperNonary>(&step); oper_nonary_p) {
+            /// NOTE: handle opcode-style SSA (no operands)
+            return emit_oper_nonary(*oper_nonary_p);
+        } else if (auto oper_unary_p = std::get_if<IR::Steps::OperUnary>(&step); oper_unary_p) {
+            /// NOTE: handle opcode-style SSA (1 operands)
+            return emit_oper_unary(*oper_unary_p);
+        } else if (auto oper_binary_p = std::get_if<IR::Steps::OperBinary>(&step); oper_binary_p) {
+            /// NOTE: handle opcode-style SSA (2 operands)
+            return emit_oper_binary(*oper_binary_p);
+        } else {
+            return false;
+        }
+    }
+
+    auto Emitter::emit_bb(const IR::CFG::BasicBlock& bb) -> bool {
+        for (const auto& step : bb.steps) {
+            if (!emit_step(step)) {
+                return false;
+            }
+        }
+
+        return true;
+    }
+
+    auto Emitter::emit_chunk(const IR::CFG::CFG& cfg) -> bool {
+        std::set<int> visited_ids;
+        std::stack<int> frontier;
+
+        frontier.push(0);
+        m_result_chunks.emplace_back();
+
+        while (!frontier.empty()) {
+            auto next_bb_id = frontier.top();
+            frontier.pop();
+
+            if (visited_ids.contains(next_bb_id)) {
+                continue;
+            }
+
+            auto next_bb_opt = cfg.get_bb(next_bb_id);
+
+            if (!next_bb_opt) {
+                std::println(std::cerr, "Failed to get basic block #{} of CFG...", next_bb_id);
+
+                return false;
+            }
+
+            auto next_bb_p = next_bb_opt.value();
+
+            if (!emit_bb(*next_bb_p)) {
+                std::println(std::cerr, "Failed to emit basic block #{} of CFG...", next_bb_id);
+
+                return false;
+            }
+
+            visited_ids.insert(next_bb_id);
+
+            if (const auto falsy_child_id = next_bb_p->falsy_id; falsy_child_id != -1) {
+                frontier.push(falsy_child_id);
+            }
+
+            if (const auto truthy_child_id = next_bb_p->truthy_id; truthy_child_id != -1) {
+                frontier.push(truthy_child_id);
+            }
+        }
+
+        return true;
+    }
+}
