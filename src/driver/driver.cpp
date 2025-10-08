@@ -125,7 +125,6 @@ namespace Minuet::Driver::Compilation {
         /// NOTE: print the IR to check its correctness!
         print_ir(program_ir_opt.value());
 
-        /// TODO: fix codegen after IR generation is completed!
         return generate_program(program_ir_opt.value());
     }
 }

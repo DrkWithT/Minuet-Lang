@@ -11,7 +11,7 @@ add_library(driver "")
 target_sources(driver PRIVATE driver/sources.cpp PRIVATE driver/driver.cpp)
 
 add_library(runtime "")
-target_sources(runtime PRIVATE runtime/value.cpp PRIVATE runtime/bytecode.cpp)
+target_sources(runtime PRIVATE runtime/value.cpp PRIVATE runtime/bytecode.cpp PRIVATE runtime/vm.cpp)
 
 add_executable(minuetm main.cpp)
 target_link_directories(minuetm PRIVATE ${MINUET_LANG_LIB_DIR})
