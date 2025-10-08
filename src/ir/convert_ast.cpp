@@ -291,19 +291,9 @@ namespace Minuet::IR::Convert {
         const auto arg_count = static_cast<int16_t>(call.args.size());
 
         for (int16_t arg_idx = 0; arg_idx < arg_count; ++arg_idx) {
-            if (auto arg_aa_opt = emit_expr(call.args.at(arg_idx), source); arg_aa_opt) {
-                if (auto arg_dest_aa_opt = gen_temp_aa(); arg_dest_aa_opt) {
-                    m_result_cfgs.back().get_newest_bb().value()->steps.emplace_back(TACUnary {
-                        .dest = arg_dest_aa_opt.value(),
-                        .arg_0 = arg_aa_opt.value(),
-                        .op = Op::nop,
-                    });
-
-                    continue;
-                }
+            if (auto arg_aa_opt = emit_expr(call.args.at(arg_idx), source); !arg_aa_opt) {
+                return {};
             }
-
-            return {};
         }
 
         m_result_cfgs.back().get_newest_bb().value()->steps.emplace_back(OperBinary {
@@ -422,9 +412,8 @@ namespace Minuet::IR::Convert {
             return false;
         }
 
-        m_result_cfgs.back().get_newest_bb().value()->steps.emplace_back(OperBinary {
-            .arg_0 = cond_result_aa.value(),
-            .arg_1 = {
+        m_result_cfgs.back().get_newest_bb().value()->steps.emplace_back(OperUnary {
+            .arg_0 = {
                 .id = 0,
                 .tag = AbsAddrTag::immediate,
             },
