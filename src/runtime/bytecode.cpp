@@ -5,8 +5,7 @@
 namespace Minuet::Runtime::Code {
     static constexpr std::array<std::string_view, static_cast<std::size_t>(Opcode::last)> opcode_names = {
         "nop",
-        "push",
-        "pop",
+        "load_const",
         "mov",
         "neg",
         "inc",
@@ -34,6 +33,7 @@ namespace Minuet::Runtime::Code {
     static constexpr std::array<std::string_view, static_cast<std::size_t>(ArgMode::last)> arg_mode_names = {
         "immediate",
         "constant",
+        "reg",
         "stack",
         "heap",
     };

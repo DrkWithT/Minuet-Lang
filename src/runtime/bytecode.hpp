@@ -10,8 +10,7 @@
 namespace Minuet::Runtime::Code {
     enum class Opcode : uint8_t {
         nop,
-        push,
-        pop,
+        load_const,
         mov,
         neg,
         inc,
@@ -42,6 +41,7 @@ namespace Minuet::Runtime::Code {
     enum class ArgMode : uint8_t {
         immediate,
         constant,
+        reg,
         stack,
         heap,
         last,
@@ -50,13 +50,13 @@ namespace Minuet::Runtime::Code {
     [[nodiscard]] auto arg_mode_name(ArgMode mode) -> std::string_view;
 
     struct Instruction {
-        uint16_t args[3];
-        uint8_t metadata; // NOTE: `2` bits for arity between `0` to `3`, `3` max arg-values.
+        int16_t args[3];
+        uint16_t metadata; // NOTE: `2` bits for arity between `0` to `3`, `3` max arg-values.
         Opcode op;
     };
 
     [[nodiscard]] constexpr auto instruct_arity(Instruction inst) -> uint8_t {
-        return static_cast<uint8_t>((inst.metadata & 0b11000000) >> 6);
+        return static_cast<uint8_t>(inst.metadata & 0b11);
     }
     
     template <std::size_t ArgPos>
