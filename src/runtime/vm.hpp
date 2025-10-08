@@ -44,7 +44,7 @@ namespace Minuet::Runtime::VM {
     private:
         [[nodiscard]] auto fetch_value(Code::ArgMode mode, int16_t id) noexcept -> std::optional<Value>;
 
-        [[nodiscard]] auto push_value(Value value) noexcept -> bool;
+        [[maybe_unused]] auto push_value(Value value) noexcept -> bool;
         [[nodiscard]] auto pop_value() noexcept -> std::optional<Value>;
 
         void handle_load_const(uint16_t metadata, int16_t dest, int16_t const_id) noexcept;
@@ -57,12 +57,12 @@ namespace Minuet::Runtime::VM {
         void handle_mod(uint16_t metadata, int16_t dest, int16_t lhs, int16_t rhs) noexcept;
         void handle_add(uint16_t metadata, int16_t dest, int16_t lhs, int16_t rhs) noexcept;
         void handle_sub(uint16_t metadata, int16_t dest, int16_t lhs, int16_t rhs);
-        void handle_cmp_eq(uint16_t metadata, int16_t lhs, int16_t rhs) noexcept;
-        void handle_cmp_ne(uint16_t metadata, int16_t lhs, int16_t rhs) noexcept;
-        void handle_cmp_lt(uint16_t metadata, int16_t lhs, int16_t rhs) noexcept;
-        void handle_cmp_gt(uint16_t metadata, int16_t lhs, int16_t rhs) noexcept;
-        void handle_cmp_gte(uint16_t metadata, int16_t lhs, int16_t rhs) noexcept;
-        void handle_cmp_lte(uint16_t metadata, int16_t lhs, int16_t rhs) noexcept;
+        void handle_cmp_eq(uint16_t metadata, int16_t dest, int16_t lhs, int16_t rhs) noexcept;
+        void handle_cmp_ne(uint16_t metadata, int16_t dest, int16_t lhs, int16_t rhs) noexcept;
+        void handle_cmp_lt(uint16_t metadata, int16_t dest, int16_t lhs, int16_t rhs) noexcept;
+        void handle_cmp_gt(uint16_t metadata, int16_t dest, int16_t lhs, int16_t rhs) noexcept;
+        void handle_cmp_gte(uint16_t metadata, int16_t dest, int16_t lhs, int16_t rhs) noexcept;
+        void handle_cmp_lte(uint16_t metadata, int16_t dest, int16_t lhs, int16_t rhs) noexcept;
         void handle_jmp(int16_t dest_ip) noexcept;
         void handle_jmp_if(int16_t dest_ip) noexcept;
         void handle_jmp_else(int16_t dest_ip) noexcept;

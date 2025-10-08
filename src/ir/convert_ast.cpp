@@ -121,10 +121,6 @@ namespace Minuet::IR::Convert {
                     m_globals[name] = aa;
                 }
 
-                if (!name_exists && m_proto_main_id == -1) {
-                    m_proto_main_id = aa.id;
-                }
-
                 break;
             case NameLocation::local_slot:
                 name_exists = m_locals.contains(name);
@@ -282,24 +278,34 @@ namespace Minuet::IR::Convert {
             return {};
         }
 
+        /// NOTE: Any call will take the function ID and then N (stack argument count).
+        const int16_t real_args_n = call.args.size();
+
+        for (int16_t arg_idx = 0; arg_idx < real_args_n; ++arg_idx) {
+            if (auto arg_aa_opt = emit_expr(call.args.at(arg_idx), source); arg_aa_opt) {
+                const auto arg_dest = gen_temp_aa().value();
+
+                m_result_cfgs.back().get_newest_bb().value()->steps.emplace_back(TACUnary {
+                    .dest = arg_dest,
+                    .arg_0 = arg_aa_opt.value(),
+                    .op = Op::nop,
+                });
+
+                continue;
+            }
+
+            return {};
+        }
+
         const auto call_result_slot_aa = AbsAddress {
-            .id = m_next_local_aa,
+            .id = static_cast<int16_t>(m_next_local_aa - real_args_n),
             .tag = AbsAddrTag::temp,
         };
-
-        /// NOTE: Any call will take the function ID and then N (stack argument count).
-        const auto arg_count = static_cast<int16_t>(call.args.size());
-
-        for (int16_t arg_idx = 0; arg_idx < arg_count; ++arg_idx) {
-            if (auto arg_aa_opt = emit_expr(call.args.at(arg_idx), source); !arg_aa_opt) {
-                return {};
-            }
-        }
 
         m_result_cfgs.back().get_newest_bb().value()->steps.emplace_back(OperBinary {
             .arg_0 = callee_aa_opt.value(),
             .arg_1 = {
-                .id = arg_count,
+                .id = real_args_n,
                 .tag = AbsAddrTag::immediate,
             },
             .op = Op::call,
@@ -537,7 +543,13 @@ namespace Minuet::IR::Convert {
                 return false;
             }
 
-            return record_name_aa(NameLocation::global_function_slot, func_name, next_func_aa_opt.value());
+            const auto func_aa = next_func_aa_opt.value();
+
+            if (func_name == "main" && m_proto_main_id == -1) {
+                m_proto_main_id = func_aa.id;
+            }
+
+            return record_name_aa(NameLocation::global_function_slot, func_name, func_aa);
         }
 
         add_cfg();

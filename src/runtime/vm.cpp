@@ -1,5 +1,6 @@
-#include <algorithm>
 #include <utility>
+#include <algorithm>
+// #include <print>
 
 #include "runtime/bytecode.hpp"
 #include "runtime/vm.hpp"
@@ -37,7 +38,9 @@ namespace Minuet::Runtime::VM {
         m_rbp = 0;
         m_rft = 0;
         m_rsp = -1;
-        m_res = static_cast<int>(Utils::ExecStatus::entry_error);
+        m_res = (prgm_entry_fn_id >= 0)
+            ? static_cast<int>(Utils::ExecStatus::ok)
+            : static_cast<int>(Utils::ExecStatus::entry_error);
 
         m_consts_n = static_cast<int>(prgm.constants.size());
         m_mem_limit = mem_limit;
@@ -46,12 +49,23 @@ namespace Minuet::Runtime::VM {
     }
 
     auto Engine::operator()() -> Utils::ExecStatus {
+        push_value(Value {m_res});
+        push_value(Value {m_rfv});
+
         while (!m_call_frames.empty() && m_res == ok_res_value) {
             const auto [args, metadata, opcode] = m_chunk_view[m_rfi][m_rip];
+
+            // std::println("RFI = {}, RIP = {}, RBP = {}, RFT = {}, RSP = {}, opcode: {}", m_rfi, m_rip, m_rbp, m_rft, m_rsp, Code::opcode_name(opcode)); // debug
 
             switch (opcode) {
                 case Code::Opcode::nop:
                     ++m_rip;
+                    break;
+                case Code::Opcode::load_const:
+                    handle_load_const(metadata, args[0], args[1]);
+                    break;
+                case Code::Opcode::mov:
+                    handle_mov(metadata, args[0], args[1]);
                     break;
                 case Code::Opcode::neg:
                     handle_neg(metadata, args[0]);
@@ -78,22 +92,22 @@ namespace Minuet::Runtime::VM {
                     handle_sub(metadata, args[0], args[1], args[2]);
                     break;
                 case Code::Opcode::equ:
-                    handle_cmp_eq(metadata, args[0], args[1]);
+                    handle_cmp_eq(metadata, args[0], args[1], args[2]);
                     break;
                 case Code::Opcode::neq:
-                    handle_cmp_ne(metadata, args[0], args[1]);
+                    handle_cmp_ne(metadata, args[0], args[1], args[2]);
                     break;
                 case Code::Opcode::lt:
-                    handle_cmp_lt(metadata, args[0], args[1]);
+                    handle_cmp_lt(metadata, args[0], args[1], args[2]);
                     break;
                 case Code::Opcode::gt:
-                    handle_cmp_gt(metadata, args[0], args[1]);
+                    handle_cmp_gt(metadata, args[0], args[1], args[2]);
                     break;
                 case Code::Opcode::lte:
-                    handle_cmp_lte(metadata, args[0], args[1]);
+                    handle_cmp_lte(metadata, args[0], args[1], args[2]);
                     break;
                 case Code::Opcode::gte:
-                    handle_cmp_gte(metadata, args[0], args[1]);
+                    handle_cmp_gte(metadata, args[0], args[1], args[2]);
                     break;
                 case Code::Opcode::jump:
                     handle_jmp(args[0]);
@@ -106,6 +120,9 @@ namespace Minuet::Runtime::VM {
                     break;
                 case Code::Opcode::call:
                     handle_call(args[0], args[1]);
+                    break;
+                case Code::Opcode::ret:
+                    handle_ret(metadata, args[0]);
                     break;
                 case Code::Opcode::native_call:
                 case Code::Opcode::halt:
@@ -184,6 +201,7 @@ namespace Minuet::Runtime::VM {
 
         m_rft = std::max(m_rft, real_mem_dest_id);
         m_memory[real_mem_dest_id] = temp_const.value();
+        ++m_rip;
     }
 
     void Engine::handle_mov(uint16_t metadata, int16_t dest, int16_t src) noexcept {
@@ -199,10 +217,12 @@ namespace Minuet::Runtime::VM {
 
         m_rft = std::max(m_rft, real_mem_dest_id);
         m_memory[real_mem_dest_id] = src_value_opt.value();
+        ++m_rip;
     }
 
     void Engine::handle_neg([[maybe_unused]] uint16_t metadata, int16_t dest) noexcept {        
         if (const auto real_mem_dest_id = m_rbp + dest; m_memory[real_mem_dest_id].negate()) {
+            m_rft = std::max(m_rft, real_mem_dest_id);
             m_res = static_cast<int>(Utils::ExecStatus::arg_error);
             return;
         }
@@ -233,6 +253,7 @@ namespace Minuet::Runtime::VM {
 
         const auto real_mem_loc = m_rbp + dest;
         m_memory[real_mem_loc] = lhs_opt.value() * rhs_opt.value();
+        m_rft = std::max(m_rft, real_mem_loc);
         ++m_rip;
     }
 
@@ -251,6 +272,7 @@ namespace Minuet::Runtime::VM {
             const auto real_mem_loc = m_rbp + dest;
 
             m_memory[real_mem_loc] = std::move(temp);
+            m_rft = std::max(m_rft, real_mem_loc);
             ++m_rip;
         } else {
             m_res = static_cast<int>(Utils::ExecStatus::math_error);
@@ -272,6 +294,7 @@ namespace Minuet::Runtime::VM {
             const auto real_mem_loc = m_rbp + dest;
 
             m_memory[real_mem_loc] = std::move(temp);
+            m_rft = std::max(m_rft, real_mem_loc);
             ++m_rip;
         } else {
             m_res = static_cast<int>(Utils::ExecStatus::math_error);
@@ -292,6 +315,7 @@ namespace Minuet::Runtime::VM {
         const auto real_mem_loc = m_rbp + dest;
 
         m_memory[real_mem_loc] = lhs_opt.value() + rhs_opt.value();
+        m_rft = std::max(m_rft, real_mem_loc);
         ++m_rip;
     }
 
@@ -309,96 +333,139 @@ namespace Minuet::Runtime::VM {
         const auto real_mem_loc = m_rbp + dest;
 
         m_memory[real_mem_loc] = lhs_opt.value() - rhs_opt.value();
+        m_rft = std::max(m_rft, real_mem_loc);
         ++m_rip;
     }
 
-    void Engine::handle_cmp_eq(uint16_t metadata, int16_t lhs, int16_t rhs) noexcept {
-        const auto lhs_mode = static_cast<Code::ArgMode>((metadata & 0b00000000111100) >> 2);
-        const auto rhs_mode = static_cast<Code::ArgMode>((metadata & 0b00001111000000) >> 6);
+    void Engine::handle_cmp_eq(uint16_t metadata, int16_t dest, int16_t lhs, int16_t rhs) noexcept {
+        const auto dest_mode = static_cast<Code::ArgMode>((metadata & 0b00000000111100) >> 2);
+        const auto lhs_mode = static_cast<Code::ArgMode>((metadata & 0b00001111000000) >> 6);
+        const auto rhs_mode = static_cast<Code::ArgMode>((metadata & 0b11110000000000) >> 10);
+
+        auto dest_opt = fetch_value(dest_mode, dest);
         auto lhs_opt = fetch_value(lhs_mode, lhs);
         auto rhs_opt = fetch_value(rhs_mode, rhs);
 
-        if (!lhs_opt || !rhs_opt) {
+        if (!dest_opt || !lhs_opt || !rhs_opt) {
             m_res = static_cast<int>(Utils::ExecStatus::mem_error);
             return;
         }
+
+        const auto real_mem_loc = m_rbp + dest;
 
         m_rfv = lhs_opt.value() == rhs_opt.value();
+        m_memory[real_mem_loc] = {m_rfv};
+        m_rft = std::max(m_rft, real_mem_loc);
         ++m_rip;
     }
 
-    void Engine::handle_cmp_ne(uint16_t metadata, int16_t lhs, int16_t rhs) noexcept {
-        const auto lhs_mode = static_cast<Code::ArgMode>((metadata & 0b00000000111100) >> 2);
-        const auto rhs_mode = static_cast<Code::ArgMode>((metadata & 0b00001111000000) >> 6);
+    void Engine::handle_cmp_ne(uint16_t metadata, int16_t dest, int16_t lhs, int16_t rhs) noexcept {
+        const auto dest_mode = static_cast<Code::ArgMode>((metadata & 0b00000000111100) >> 2);
+        const auto lhs_mode = static_cast<Code::ArgMode>((metadata & 0b00001111000000) >> 6);
+        const auto rhs_mode = static_cast<Code::ArgMode>((metadata & 0b11110000000000) >> 10);
+
+        auto dest_opt = fetch_value(dest_mode, dest);
         auto lhs_opt = fetch_value(lhs_mode, lhs);
         auto rhs_opt = fetch_value(rhs_mode, rhs);
 
-        if (!lhs_opt || !rhs_opt) {
+        if (!dest_opt || !lhs_opt || !rhs_opt) {
             m_res = static_cast<int>(Utils::ExecStatus::mem_error);
             return;
         }
+
+        const auto real_mem_loc = m_rbp + dest;
 
         m_rfv = lhs_opt.value() != rhs_opt.value();
+        m_memory[real_mem_loc] = {m_rfv};
+        m_rft = std::max(m_rft, real_mem_loc);
         ++m_rip;
     }
 
-    void Engine::handle_cmp_lt(uint16_t metadata, int16_t lhs, int16_t rhs) noexcept {
-        const auto lhs_mode = static_cast<Code::ArgMode>((metadata & 0b00000000111100) >> 2);
-        const auto rhs_mode = static_cast<Code::ArgMode>((metadata & 0b00001111000000) >> 6);
+    void Engine::handle_cmp_lt(uint16_t metadata, int16_t dest, int16_t lhs, int16_t rhs) noexcept {
+        const auto dest_mode = static_cast<Code::ArgMode>((metadata & 0b00000000111100) >> 2);
+        const auto lhs_mode = static_cast<Code::ArgMode>((metadata & 0b00001111000000) >> 6);
+        const auto rhs_mode = static_cast<Code::ArgMode>((metadata & 0b11110000000000) >> 10);
+
+        auto dest_opt = fetch_value(dest_mode, dest);
         auto lhs_opt = fetch_value(lhs_mode, lhs);
         auto rhs_opt = fetch_value(rhs_mode, rhs);
 
-        if (!lhs_opt || !rhs_opt) {
+        if (!dest_opt || !lhs_opt || !rhs_opt) {
             m_res = static_cast<int>(Utils::ExecStatus::mem_error);
             return;
         }
+
+        const auto real_mem_loc = m_rbp + dest;
 
         m_rfv = lhs_opt.value() < rhs_opt.value();
+        m_memory[real_mem_loc] = {m_rfv};
+        m_rft = std::max(m_rft, real_mem_loc);
         ++m_rip;
     }
 
-    void Engine::handle_cmp_gt(uint16_t metadata, int16_t lhs, int16_t rhs) noexcept {
-        const auto lhs_mode = static_cast<Code::ArgMode>((metadata & 0b00000000111100) >> 2);
-        const auto rhs_mode = static_cast<Code::ArgMode>((metadata & 0b00001111000000) >> 6);
+    void Engine::handle_cmp_gt(uint16_t metadata, int16_t dest, int16_t lhs, int16_t rhs) noexcept {
+        const auto dest_mode = static_cast<Code::ArgMode>((metadata & 0b00000000111100) >> 2);
+        const auto lhs_mode = static_cast<Code::ArgMode>((metadata & 0b00001111000000) >> 6);
+        const auto rhs_mode = static_cast<Code::ArgMode>((metadata & 0b11110000000000) >> 10);
+
+        auto dest_opt = fetch_value(dest_mode, dest);
         auto lhs_opt = fetch_value(lhs_mode, lhs);
         auto rhs_opt = fetch_value(rhs_mode, rhs);
 
-        if (!lhs_opt || !rhs_opt) {
+        if (!dest_opt || !lhs_opt || !rhs_opt) {
             m_res = static_cast<int>(Utils::ExecStatus::mem_error);
             return;
         }
+
+        const auto real_mem_loc = m_rbp + dest;
 
         m_rfv = lhs_opt.value() > rhs_opt.value();
+        m_memory[real_mem_loc] = {m_rfv};
+        m_rft = std::max(m_rft, real_mem_loc);
         ++m_rip;
     }
 
-    void Engine::handle_cmp_gte(uint16_t metadata, int16_t lhs, int16_t rhs) noexcept {
-        const auto lhs_mode = static_cast<Code::ArgMode>((metadata & 0b00000000111100) >> 2);
-        const auto rhs_mode = static_cast<Code::ArgMode>((metadata & 0b00001111000000) >> 6);
+    void Engine::handle_cmp_gte(uint16_t metadata, int16_t dest, int16_t lhs, int16_t rhs) noexcept {
+        const auto dest_mode = static_cast<Code::ArgMode>((metadata & 0b00000000111100) >> 2);
+        const auto lhs_mode = static_cast<Code::ArgMode>((metadata & 0b00001111000000) >> 6);
+        const auto rhs_mode = static_cast<Code::ArgMode>((metadata & 0b11110000000000) >> 10);
+
+        auto dest_opt = fetch_value(dest_mode, dest);
         auto lhs_opt = fetch_value(lhs_mode, lhs);
         auto rhs_opt = fetch_value(rhs_mode, rhs);
 
-        if (!lhs_opt || !rhs_opt) {
+        if (!dest_opt || !lhs_opt || !rhs_opt) {
             m_res = static_cast<int>(Utils::ExecStatus::mem_error);
             return;
         }
+
+        const auto real_mem_loc = m_rbp + dest;
 
         m_rfv = lhs_opt.value() >= rhs_opt.value();
+        m_memory[real_mem_loc] = {m_rfv};
+        m_rft = std::max(m_rft, real_mem_loc);
         ++m_rip;
     }
 
-    void Engine::handle_cmp_lte(uint16_t metadata, int16_t lhs, int16_t rhs) noexcept {
-        const auto lhs_mode = static_cast<Code::ArgMode>((metadata & 0b00000000111100) >> 2);
-        const auto rhs_mode = static_cast<Code::ArgMode>((metadata & 0b00001111000000) >> 6);
+    void Engine::handle_cmp_lte(uint16_t metadata, int16_t dest, int16_t lhs, int16_t rhs) noexcept {
+        const auto dest_mode = static_cast<Code::ArgMode>((metadata & 0b00000000111100) >> 2);
+        const auto lhs_mode = static_cast<Code::ArgMode>((metadata & 0b00001111000000) >> 6);
+        const auto rhs_mode = static_cast<Code::ArgMode>((metadata & 0b11110000000000) >> 10);
+
+        auto dest_opt = fetch_value(dest_mode, dest);
         auto lhs_opt = fetch_value(lhs_mode, lhs);
         auto rhs_opt = fetch_value(rhs_mode, rhs);
 
-        if (!lhs_opt || !rhs_opt) {
+        if (!dest_opt || !lhs_opt || !rhs_opt) {
             m_res = static_cast<int>(Utils::ExecStatus::mem_error);
             return;
         }
 
+        const auto real_mem_loc = m_rbp + dest;
+
         m_rfv = lhs_opt.value() <= rhs_opt.value();
+        m_memory[real_mem_loc] = {m_rfv};
+        m_rft = std::max(m_rft, real_mem_loc);
         ++m_rip;
     }
 
