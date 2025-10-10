@@ -11,7 +11,7 @@ namespace Minuet::Runtime::VM {
     static constexpr auto ok_res_value = static_cast<int>(Utils::ExecStatus::ok);
 
     Engine::Engine(Utils::EngineConfig config, Code::Program& prgm)
-    : m_memory {}, m_stack {}, m_call_frames {}, m_chunk_view {}, m_const_view {}, m_rfi {}, m_rip {}, m_rbp {}, m_rft {}, m_rsp {}, m_res {}, m_consts_n {}, m_mem_limit {}, m_stack_limit {}, m_recur_limit {}, m_rfv {} {
+    : m_memory {}, m_stack {}, m_call_frames {}, m_chunk_view {}, m_const_view {}, m_call_frame_ptr {nullptr}, m_rfi {}, m_rip {}, m_rbp {}, m_rft {}, m_rsp {}, m_res {}, m_consts_n {}, m_rrd {}, m_rfv {} {
         const auto [mem_limit, stack_limit, recur_depth_max] = config;
         const auto prgm_entry_fn_id = prgm.entry_id.value_or(-1);
 
@@ -23,15 +23,12 @@ namespace Minuet::Runtime::VM {
         m_stack.reserve(stack_vec_size);
         m_stack.resize(stack_vec_size);
 
-        m_call_frames.emplace_back(Utils::CallFrame {
-            .old_func_idx = 0,
-            .old_func_ip = 0,
-            .old_base_ptr = 0,
-            .old_mem_top = 0,
-        });
+        m_call_frames.reserve(recur_depth_max);
+        m_call_frames.resize(recur_depth_max);
 
         m_chunk_view = prgm.chunks.data();
         m_const_view = prgm.constants.data();
+        m_call_frame_ptr = m_call_frames.data();
 
         m_rfi = prgm_entry_fn_id;
         m_rip = 0;
@@ -43,16 +40,21 @@ namespace Minuet::Runtime::VM {
             : static_cast<int>(Utils::ExecStatus::entry_error);
 
         m_consts_n = static_cast<int>(prgm.constants.size());
-        m_mem_limit = mem_limit;
-        m_stack_limit = stack_limit;
-        m_recur_limit = recur_depth_max;
+
+        *m_call_frame_ptr = Utils::CallFrame {
+            .old_func_idx = 0,
+            .old_func_ip = 0,
+            .old_base_ptr = 0,
+            .old_mem_top = 0,
+        };
+        ++m_rrd; // NOTE: main is implicitly called if present... call depth is now 1 to count this!
     }
 
     auto Engine::operator()() -> Utils::ExecStatus {
         push_value(Value {m_res});
         push_value(Value {m_rfv});
 
-        while (!m_call_frames.empty() && m_res == ok_res_value) {
+        while (m_rrd > 0 && m_res == ok_res_value) {
             const auto [args, metadata, opcode] = m_chunk_view[m_rfi][m_rip];
 
             // std::println("RFI = {}, RIP = {}, RBP = {}, RFT = {}, RSP = {}, opcode: {}", m_rfi, m_rip, m_rbp, m_rft, m_rsp, Code::opcode_name(opcode)); // debug
@@ -142,35 +144,14 @@ namespace Minuet::Runtime::VM {
 
     auto Engine::fetch_value(Code::ArgMode mode, int16_t id) noexcept -> std::optional<Value> {
         switch (mode) {
-            case Code::ArgMode::constant:
-                if (id >= 0 && id < m_consts_n) {
-                    return m_const_view[id];
-                } else {
-                    return {};
-                }
-            case Code::ArgMode::reg:
-                if (const auto real_mem_pos = m_rbp + id; real_mem_pos >= m_rbp && real_mem_pos < m_mem_limit) {
-                    return m_memory[m_rbp + id];
-                } else {
-                    return {};
-                }
-            case Code::ArgMode::stack:
-                if (!m_stack.empty()) {
-                    return m_stack[m_rsp];
-                } else {
-                    return {};
-                }
-            case Code::ArgMode::heap:
-            default:
-                return {};
+            case Code::ArgMode::constant: return m_const_view[id];
+            case Code::ArgMode::reg: return m_memory[m_rbp + id];
+            case Code::ArgMode::stack: return m_stack[m_rsp];
+            case Code::ArgMode::heap: default: return {};
         }
     }
 
     auto Engine::push_value(Value&& value) noexcept -> bool {
-        if (m_rsp >= m_stack_limit) {
-            return false;
-        }
-
         ++m_rsp;
         m_stack[m_rsp] = std::move(value);
 
@@ -178,10 +159,6 @@ namespace Minuet::Runtime::VM {
     }
 
     auto Engine::pop_value() noexcept -> std::optional<Value> {
-        if (m_rsp < 0) {
-            return {};
-        }
-
         const auto old_rsp = m_rsp;
 
         --m_rsp;
@@ -191,7 +168,7 @@ namespace Minuet::Runtime::VM {
 
     void Engine::handle_load_const([[maybe_unused]] uint16_t metadata, int16_t dest, int16_t const_id) noexcept {
         auto temp_const = fetch_value(Code::ArgMode::constant, const_id);
-        
+
         if (!temp_const) {
             m_res = static_cast<int>(Utils::ExecStatus::mem_error);
             return;
@@ -220,7 +197,7 @@ namespace Minuet::Runtime::VM {
         ++m_rip;
     }
 
-    void Engine::handle_neg([[maybe_unused]] uint16_t metadata, int16_t dest) noexcept {        
+    void Engine::handle_neg([[maybe_unused]] uint16_t metadata, int16_t dest) noexcept {
         if (const auto real_mem_dest_id = m_rbp + dest; m_memory[real_mem_dest_id].negate()) {
             m_rft = std::max(m_rft, real_mem_dest_id);
             m_res = static_cast<int>(Utils::ExecStatus::arg_error);
@@ -246,11 +223,6 @@ namespace Minuet::Runtime::VM {
         auto lhs_opt = fetch_value(lhs_mode, lhs);
         auto rhs_opt = fetch_value(rhs_mode, rhs);
 
-        if (!lhs_opt || !rhs_opt) {
-            m_res = static_cast<int>(Utils::ExecStatus::mem_error);
-            return;
-        }
-
         const auto real_mem_loc = m_rbp + dest;
         m_memory[real_mem_loc] = std::move(lhs_opt.value());
         m_memory[real_mem_loc] *= rhs_opt.value();
@@ -263,11 +235,6 @@ namespace Minuet::Runtime::VM {
         const auto rhs_mode = static_cast<Code::ArgMode>((metadata & 0b11110000000000) >> 10);
         auto lhs_opt = fetch_value(lhs_mode, lhs);
         auto rhs_opt = fetch_value(rhs_mode, rhs);
-
-        if (!lhs_opt || !rhs_opt) {
-            m_res = static_cast<int>(Utils::ExecStatus::mem_error);
-            return;
-        }
         
         if (auto temp = lhs_opt.value() / rhs_opt.value(); !temp.is_none()) {
             const auto real_mem_loc = m_rbp + dest;
@@ -285,11 +252,6 @@ namespace Minuet::Runtime::VM {
         const auto rhs_mode = static_cast<Code::ArgMode>((metadata & 0b11110000000000) >> 10);
         auto lhs_opt = fetch_value(lhs_mode, lhs);
         auto rhs_opt = fetch_value(rhs_mode, rhs);
-
-        if (!lhs_opt || !rhs_opt) {
-            m_res = static_cast<int>(Utils::ExecStatus::mem_error);
-            return;
-        }
         
         if (auto temp = lhs_opt.value() % rhs_opt.value(); !temp.is_none()) {
             const auto real_mem_loc = m_rbp + dest;
@@ -308,11 +270,6 @@ namespace Minuet::Runtime::VM {
         auto lhs_opt = fetch_value(lhs_mode, lhs);
         auto rhs_opt = fetch_value(rhs_mode, rhs);
 
-        if (!lhs_opt || !rhs_opt) {
-            m_res = static_cast<int>(Utils::ExecStatus::mem_error);
-            return;
-        }
-
         const auto real_mem_loc = m_rbp + dest;
 
         m_memory[real_mem_loc] = std::move(lhs_opt.value());
@@ -327,11 +284,6 @@ namespace Minuet::Runtime::VM {
         auto lhs_opt = fetch_value(lhs_mode, lhs);
         auto rhs_opt = fetch_value(rhs_mode, rhs);
 
-        if (!lhs_opt || !rhs_opt) {
-            m_res = static_cast<int>(Utils::ExecStatus::mem_error);
-            return;
-        }
-
         const auto real_mem_loc = m_rbp + dest;
 
         m_memory[real_mem_loc] = lhs_opt.value();
@@ -341,18 +293,11 @@ namespace Minuet::Runtime::VM {
     }
 
     void Engine::handle_cmp_eq(uint16_t metadata, int16_t dest, int16_t lhs, int16_t rhs) noexcept {
-        const auto dest_mode = static_cast<Code::ArgMode>((metadata & 0b00000000111100) >> 2);
         const auto lhs_mode = static_cast<Code::ArgMode>((metadata & 0b00001111000000) >> 6);
         const auto rhs_mode = static_cast<Code::ArgMode>((metadata & 0b11110000000000) >> 10);
 
-        auto dest_opt = fetch_value(dest_mode, dest);
         auto lhs_opt = fetch_value(lhs_mode, lhs);
         auto rhs_opt = fetch_value(rhs_mode, rhs);
-
-        if (!dest_opt || !lhs_opt || !rhs_opt) {
-            m_res = static_cast<int>(Utils::ExecStatus::mem_error);
-            return;
-        }
 
         const auto real_mem_loc = m_rbp + dest;
 
@@ -363,18 +308,11 @@ namespace Minuet::Runtime::VM {
     }
 
     void Engine::handle_cmp_ne(uint16_t metadata, int16_t dest, int16_t lhs, int16_t rhs) noexcept {
-        const auto dest_mode = static_cast<Code::ArgMode>((metadata & 0b00000000111100) >> 2);
         const auto lhs_mode = static_cast<Code::ArgMode>((metadata & 0b00001111000000) >> 6);
         const auto rhs_mode = static_cast<Code::ArgMode>((metadata & 0b11110000000000) >> 10);
 
-        auto dest_opt = fetch_value(dest_mode, dest);
         auto lhs_opt = fetch_value(lhs_mode, lhs);
         auto rhs_opt = fetch_value(rhs_mode, rhs);
-
-        if (!dest_opt || !lhs_opt || !rhs_opt) {
-            m_res = static_cast<int>(Utils::ExecStatus::mem_error);
-            return;
-        }
 
         const auto real_mem_loc = m_rbp + dest;
 
@@ -385,18 +323,11 @@ namespace Minuet::Runtime::VM {
     }
 
     void Engine::handle_cmp_lt(uint16_t metadata, int16_t dest, int16_t lhs, int16_t rhs) noexcept {
-        const auto dest_mode = static_cast<Code::ArgMode>((metadata & 0b00000000111100) >> 2);
         const auto lhs_mode = static_cast<Code::ArgMode>((metadata & 0b00001111000000) >> 6);
         const auto rhs_mode = static_cast<Code::ArgMode>((metadata & 0b11110000000000) >> 10);
 
-        auto dest_opt = fetch_value(dest_mode, dest);
         auto lhs_opt = fetch_value(lhs_mode, lhs);
         auto rhs_opt = fetch_value(rhs_mode, rhs);
-
-        if (!dest_opt || !lhs_opt || !rhs_opt) {
-            m_res = static_cast<int>(Utils::ExecStatus::mem_error);
-            return;
-        }
 
         const auto real_mem_loc = m_rbp + dest;
 
@@ -407,18 +338,11 @@ namespace Minuet::Runtime::VM {
     }
 
     void Engine::handle_cmp_gt(uint16_t metadata, int16_t dest, int16_t lhs, int16_t rhs) noexcept {
-        const auto dest_mode = static_cast<Code::ArgMode>((metadata & 0b00000000111100) >> 2);
         const auto lhs_mode = static_cast<Code::ArgMode>((metadata & 0b00001111000000) >> 6);
         const auto rhs_mode = static_cast<Code::ArgMode>((metadata & 0b11110000000000) >> 10);
 
-        auto dest_opt = fetch_value(dest_mode, dest);
         auto lhs_opt = fetch_value(lhs_mode, lhs);
         auto rhs_opt = fetch_value(rhs_mode, rhs);
-
-        if (!dest_opt || !lhs_opt || !rhs_opt) {
-            m_res = static_cast<int>(Utils::ExecStatus::mem_error);
-            return;
-        }
 
         const auto real_mem_loc = m_rbp + dest;
 
@@ -429,18 +353,11 @@ namespace Minuet::Runtime::VM {
     }
 
     void Engine::handle_cmp_gte(uint16_t metadata, int16_t dest, int16_t lhs, int16_t rhs) noexcept {
-        const auto dest_mode = static_cast<Code::ArgMode>((metadata & 0b00000000111100) >> 2);
         const auto lhs_mode = static_cast<Code::ArgMode>((metadata & 0b00001111000000) >> 6);
         const auto rhs_mode = static_cast<Code::ArgMode>((metadata & 0b11110000000000) >> 10);
 
-        auto dest_opt = fetch_value(dest_mode, dest);
         auto lhs_opt = fetch_value(lhs_mode, lhs);
         auto rhs_opt = fetch_value(rhs_mode, rhs);
-
-        if (!dest_opt || !lhs_opt || !rhs_opt) {
-            m_res = static_cast<int>(Utils::ExecStatus::mem_error);
-            return;
-        }
 
         const auto real_mem_loc = m_rbp + dest;
 
@@ -451,18 +368,11 @@ namespace Minuet::Runtime::VM {
     }
 
     void Engine::handle_cmp_lte(uint16_t metadata, int16_t dest, int16_t lhs, int16_t rhs) noexcept {
-        const auto dest_mode = static_cast<Code::ArgMode>((metadata & 0b00000000111100) >> 2);
         const auto lhs_mode = static_cast<Code::ArgMode>((metadata & 0b00001111000000) >> 6);
         const auto rhs_mode = static_cast<Code::ArgMode>((metadata & 0b11110000000000) >> 10);
 
-        auto dest_opt = fetch_value(dest_mode, dest);
         auto lhs_opt = fetch_value(lhs_mode, lhs);
         auto rhs_opt = fetch_value(rhs_mode, rhs);
-
-        if (!dest_opt || !lhs_opt || !rhs_opt) {
-            m_res = static_cast<int>(Utils::ExecStatus::mem_error);
-            return;
-        }
 
         const auto real_mem_loc = m_rbp + dest;
 
@@ -513,13 +423,15 @@ namespace Minuet::Runtime::VM {
         const auto old_rbp = m_rbp;
         const auto old_rft = m_rft;
 
-        m_call_frames.emplace_back(Utils::CallFrame {
+        ++m_call_frame_ptr;
+        *m_call_frame_ptr = Utils::CallFrame {
             .old_func_idx = old_rfi,
             .old_func_ip = old_rip,
             .old_base_ptr = old_rbp,
             .old_mem_top = old_rft,
-        });
-
+        };
+        ++m_rrd;
+        
         m_rfi = func_id;
         m_rip = 0;
         m_rbp = m_rft - arg_count + 1;
@@ -534,16 +446,12 @@ namespace Minuet::Runtime::VM {
         const auto src_mode = static_cast<Code::ArgMode>((metadata & 0b00000000111100) >> 2);
         auto ret_src_opt = fetch_value(src_mode, src_id);
 
-        if (!ret_src_opt) {
-            m_res = static_cast<int>(Utils::ExecStatus::mem_error);
-            return;
-        }
-
         m_memory[m_rbp] = std::move(ret_src_opt.value());
 
         /// 2. Restore the caller's call state
-        auto [caller_rfi, caller_rip, caller_rbp, caller_rft] = m_call_frames.back();
-        m_call_frames.pop_back();
+        auto [caller_rfi, caller_rip, caller_rbp, caller_rft] = *m_call_frame_ptr;
+        --m_call_frame_ptr;
+        --m_rrd;
 
         m_rfi = caller_rfi;
         m_rip = caller_rip;
@@ -561,7 +469,6 @@ namespace Minuet::Runtime::VM {
             m_res = saved_res_box.value().unbox_type<int>().value();
         } else {
             m_res = static_cast<int>(Utils::ExecStatus::mem_error);
-            return;
         }
     }
 }

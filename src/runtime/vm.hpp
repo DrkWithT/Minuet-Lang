@@ -77,6 +77,7 @@ namespace Minuet::Runtime::VM {
 
         const Code::Chunk* m_chunk_view;
         const Value* m_const_view;
+        Utils::CallFrame* m_call_frame_ptr;
 
         int16_t m_rfi;  // Contains the callee ID
         int16_t m_rip;  // Contains the instruction index in the callee's chunk
@@ -85,9 +86,7 @@ namespace Minuet::Runtime::VM {
         int m_rsp;
         int m_res;  // Contains execution status code
         int m_consts_n;
-        int m_mem_limit;
-        int m_stack_limit;
-        int m_recur_limit;
+        int16_t m_rrd; // Counts 1-based recursion depth- 0 means done!
         bool m_rfv; // Represents conditional-test flag value
     };
 }
