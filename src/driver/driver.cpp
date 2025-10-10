@@ -44,7 +44,7 @@ namespace Minuet::Driver::Compilation {
     }
 
     auto CompileDriver::parse_sources(const std::filesystem::path& main_path) -> std::optional<FullAST> {
-        std::set<int> visited_src_ids;
+        std::set<std::string> visited_paths;
         std::stack<Utils::PendingSource> sources_frontier;
         FullAST full_ast;
         auto temp_src_id = 0U;
@@ -59,7 +59,7 @@ namespace Minuet::Driver::Compilation {
 
             sources_frontier.pop();
 
-            if (visited_src_ids.contains(next_src_id)) {
+            if (visited_paths.contains(next_src_path)) {
                 continue;
             }
 
@@ -73,7 +73,7 @@ namespace Minuet::Driver::Compilation {
                 Parser parser;
                 auto expected_parse_result = parser(m_lexer, src_text, sources_frontier, temp_src_id);
 
-                if (!expected_parse_result.has_value()) {
+                if (!expected_parse_result) {
                     return {};
                 }
 
@@ -85,7 +85,7 @@ namespace Minuet::Driver::Compilation {
                 }
             }
 
-            visited_src_ids.insert(next_src_id);
+            visited_paths.insert(next_src_path);
         }
 
         return full_ast;
