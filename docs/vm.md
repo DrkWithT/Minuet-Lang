@@ -10,6 +10,7 @@
     - `RFT`: position of frame buffer's top
     - `RSP`: pointer of stack top
     - `RES`: error status
+    - `RRD`: current recursion depth
     - `RFV`: flag value (for comparisons)
  - Will have a heap and GC.
 

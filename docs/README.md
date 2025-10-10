@@ -1,7 +1,7 @@
 # README
 
 ### Brief
-_Minuet_ is a small, Python & C inspired language for simple scripting. Unlike shell scripting dialects across systems, this language aims to look and behave nicer for the programmer.
+_Minuet_ is a small, Python & C inspired language for simple programs. Unlike shell scripting dialects across systems, this language aims to look and behave nicer for the programmer.
 
 ### Design Principles
  - Concise and semi-familiar syntax
@@ -10,6 +10,7 @@ _Minuet_ is a small, Python & C inspired language for simple scripting. Unlike s
     - First class functions
     - Higher order functions & some closures?
  - Built-in helper functions
+ - Requires a `main` function
 
 ### Grammar: Misc. & Expressions
 ```
@@ -47,4 +48,6 @@ _Minuet_ is a small, Python & C inspired language for simple scripting. Unlike s
 ```
 
 ### Roadmap
- - Optimize VM to go under 2s for a naively recursive fibonacci 35.
+ - Test simple import support.
+ - Add a simple bytecode optimization pass.
+ - Add native functions.
