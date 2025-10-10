@@ -42,6 +42,14 @@ namespace Minuet::Frontend::Parsing {
                 continue;
             }
 
+            if (temp.type == TokenType::unknown) {
+                const auto culprit_ln = temp.line;
+                const auto culprit_col = temp.col;
+                std::string_view culprit_txt = src.substr(temp.start, token_length(temp));
+
+                throw std::runtime_error {std::format("\033[1;31mParse Error\033[0m at \033[1;33msource[{}:{}]\033[0m:\n\nCulprit: '{}'\nNote: {}\n", culprit_ln, culprit_col, culprit_txt, "Invalid token.")};
+            }
+
             break;
         } while (true);
 
@@ -604,7 +612,7 @@ namespace Minuet::Frontend::Parsing {
         });
     }
 
-    auto Parser::parse_program(Lexing::Lexer& lexer, std::string_view src, std::stack<Driver::Utils::PendingSource>& pending_srcs, uint32_t& src_counter) -> std::expected<Syntax::AST::UnitAST, int> {
+    auto Parser::parse_program(Lexing::Lexer& lexer, std::string_view src, std::stack<Driver::Utils::PendingSource>& pending_srcs, uint32_t& src_counter) -> std::optional<Syntax::AST::UnitAST> {
         consume(lexer, src);
 
         Syntax::AST::UnitAST decls;
@@ -622,19 +630,17 @@ namespace Minuet::Frontend::Parsing {
             }
         }
 
+        if (m_error_count > 0) {
+            return {};
+        }
+
         return decls;
     }
 
     Parser::Parser()
     : m_previous {}, m_current {}, m_error_count {0} {}
 
-    [[nodiscard]] auto Parser::operator()(Lexing::Lexer& lexer, std::string_view src, std::stack<Driver::Utils::PendingSource>& pending_srcs, uint32_t& src_counter) -> std::expected<Syntax::AST::UnitAST, int> {
-        auto prgm = parse_program(lexer, src, pending_srcs, src_counter);
-
-        if (m_error_count > 0) {
-            return std::expected<Syntax::AST::UnitAST, int>(m_error_count);
-        }
-
-        return prgm;
+    [[nodiscard]] auto Parser::operator()(Lexing::Lexer& lexer, std::string_view src, std::stack<Driver::Utils::PendingSource>& pending_srcs, uint32_t& src_counter) -> std::optional<Syntax::AST::UnitAST> {
+        return parse_program(lexer, src, pending_srcs, src_counter);
     }
 }
