@@ -34,7 +34,7 @@ elif [[ $action = "unittest" && $argc -eq 1 ]]; then
 elif [[ $action = "run" ]]; then
     ./build/src/minuetm "${@:2}" && echo "\033[1;32mRUN OK\033[0m" || echo "\033[1;33mRUN FAILED\033[0m"
 elif [[ $action = "profile" && $argc -eq 2 ]]; then
-    samply record --save-only -o minuet_prof.json -- ./build/src/minuetm $2
+    samply record --save-only -o minuet_prof.json -- ./build/src/minuetm run $2
 else
     usage_exit 1;
 fi

@@ -1,7 +1,7 @@
 ### VM Design Notes
 
 ### General
- - Register-based operations on a stack-like value-buffer & a separate stack exists to preserve special registers
+ - Register-based operations on a stack-like value-buffer
  - General Registers: `1 - N` depending on a function's reserved space.
  - Special Registers:
     - `RFI`: function index
@@ -25,6 +25,8 @@
  - Old `RFI` & `RIP` values for a "caller-return address"
  - Old `RBP` value
  - Old `RFT` value
+ - Old `RES` value
+ - Old `RFV` value
 
 ### Opcodes:
  - `nop`: does nothing except increment `RIP`
@@ -47,12 +49,12 @@
  - `jump <target-ip: imm>`: sets `RIP` to the immediate value (absolute code chunk position)
  - `jump_if: <target-ip: imm>`: sets `RIP` to the immediate value if `RFV == true`
  - `jump_else: <target-ip: imm>`: sets `RIP` to the immediate value if `RFV == false`
- - `call <func-id: imm> <arg-count: imm> <local-count: imm>`: saves some special registers (`RES`, `RFV`) and caller state, prepares a register frame above the latest argument register, and sets:
+ - `call <func-id: imm> <arg-count: imm> <local-count: imm>`: saves some special registers (`RES`, `RFV`) and caller state in a call frame, prepares a register frame above the latest argument register, and sets:
     - `RFI` to `func-id` (saved to `ret-func-id` on call frame)
     - `RIP` to 0 (saved to `ret-address` on call frame)
     - `RBP` to `RFT - arg_count + 1`
  - `native_call <native-func-id: imm>`: ??
- - `ret <src: const / reg>`: places a return value at the `RBP` location, destroys the current register frame, and restores some special registers (`RFV`, `RES`) and caller state
+ - `ret <src: const / reg>`: places a return value at the `RBP` location, destroys the current register frame, and restores some special registers (`RFV`, `RES`) and caller state from the top call frame 
  - `halt <status-code: imm>`: stops program execution with the specified `status-code`
 
 ### Runtime Status Codes:
