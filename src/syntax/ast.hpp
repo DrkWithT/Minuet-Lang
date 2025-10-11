@@ -1,5 +1,5 @@
-#ifndef AST_HPP
-#define AST_HPP
+#ifndef MINUET_SYNTAX_AST_HPP
+#define MINUET_SYNTAX_AST_HPP
 
 #include <vector>
 #include "syntax/stmts.hpp"

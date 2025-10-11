@@ -1,5 +1,5 @@
-#ifndef DRIVER_HPP
-#define DRIVER_HPP
+#ifndef MINUET_DRIVER_HPP
+#define MINUET_DRIVER_HPP
 
 #include <vector>
 #include <optional>

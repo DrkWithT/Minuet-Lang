@@ -1,5 +1,5 @@
-#ifndef LEXING_HPP
-#define LEXING_HPP
+#ifndef MINUET_FRONTEND_LEXING_HPP
+#define MINUET_FRONTEND_LEXING_HPP
 
 #include <concepts>
 #include <string_view>

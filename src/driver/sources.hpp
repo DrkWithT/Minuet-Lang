@@ -1,5 +1,5 @@
-#ifndef SOURCES_HPP
-#define SOURCES_HPP
+#ifndef MINUET_SOURCES_HPP
+#define MINUET_SOURCES_HPP
 
 #include <string>
 #include <filesystem>

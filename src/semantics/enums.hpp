@@ -1,5 +1,5 @@
-#ifndef SEMA_ENUMS_HPP
-#define SEMA_ENUMS_HPP
+#ifndef MINUET_SEMA_ENUMS_HPP
+#define MINUET_SEMA_ENUMS_HPP
 
 #include <cstdint>
 #include <optional>

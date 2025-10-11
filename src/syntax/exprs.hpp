@@ -1,5 +1,5 @@
-#ifndef EXPRS_HPP
-#define EXPRS_HPP
+#ifndef MINUET_SYNTAX_EXPRS_HPP
+#define MINUET_SYNTAX_EXPRS_HPP
 
 #include "frontend/lexicals.hpp"
 #include "semantics/enums.hpp"

@@ -1,5 +1,5 @@
-#ifndef STMTS_HPP
-#define STMTS_HPP
+#ifndef MINUET_SYNTAX_STMTS_HPP
+#define MINUET_SYNTAX_STMTS_HPP
 
 #include <variant>
 #include <vector>

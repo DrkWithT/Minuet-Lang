@@ -1,5 +1,5 @@
-#ifndef PARSING_HPP
-#define PARSING_HPP
+#ifndef MINUET_FRONTEND_PARSING_HPP
+#define MINUET_FRONTEND_PARSING_HPP
 
 #include <string_view>
 #include <expected>

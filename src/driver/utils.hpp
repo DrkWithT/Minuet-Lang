@@ -1,5 +1,5 @@
-#ifndef DRIVER_UTILS_HPP
-#define DRIVER_UTILS_HPP
+#ifndef MINUET_DRIVER_UTILS_HPP
+#define MINUET_DRIVER_UTILS_HPP
 
 #include <cstdint>
 #include <filesystem>

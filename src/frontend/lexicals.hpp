@@ -1,5 +1,5 @@
-#ifndef TOKEN_HPP
-#define TOKEN_HPP
+#ifndef MINUET_FRONTEND_TOKEN_HPP
+#define MINUET_FRONTEND_TOKEN_HPP
 
 #include <cstdint>
 #include <string_view>
