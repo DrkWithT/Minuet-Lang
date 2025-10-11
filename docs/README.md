@@ -49,5 +49,5 @@ _Minuet_ is a small, Python & C inspired language for simple programs. Unlike sh
 
 ### Roadmap
  - Test simple import support.
- - Add a simple bytecode optimization pass.
  - Add native functions.
+ - Add a simple bytecode optimization pass.
