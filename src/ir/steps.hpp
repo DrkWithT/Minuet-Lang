@@ -1,5 +1,5 @@
-#ifndef STEPS_HPP
-#define STEPS_HPP
+#ifndef MINUET_IR_STEPS_HPP
+#define MINUET_IR_STEPS_HPP
 
 #include <cstdint>
 #include <string_view>

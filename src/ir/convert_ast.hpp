@@ -1,5 +1,5 @@
-#ifndef CONVERT_AST_HPP
-#define CONVERT_AST_HPP
+#ifndef MINUET_IR_CONVERT_AST_HPP
+#define MINUET_IR_CONVERT_AST_HPP
 
 #include <optional>
 #include <string>
@@ -12,7 +12,7 @@
 #include "syntax/stmts.hpp"
 #include "ir/steps.hpp"
 #include "ir/cfg.hpp"
-#include "runtime/value.hpp"
+#include "runtime/fast_value.hpp"
 
 namespace Minuet::IR::Convert {
     namespace Utils {
@@ -41,7 +41,7 @@ namespace Minuet::IR::Convert {
         [[nodiscard]] auto gen_fun_aa() -> std::optional<Steps::AbsAddress>;
         [[nodiscard]] auto gen_temp_aa() -> std::optional<Steps::AbsAddress>;
 
-        [[nodiscard]] auto resolve_constant_aa(const std::string& literal, Runtime::Value value) -> std::optional<Steps::AbsAddress>;
+        [[nodiscard]] auto resolve_constant_aa(const std::string& literal, Runtime::FastValue value) -> std::optional<Steps::AbsAddress>;
         [[nodiscard]] auto record_name_aa(Utils::NameLocation mode, const std::string& name, Steps::AbsAddress aa) -> bool;
         [[nodiscard]] auto lookup_name_aa(const std::string& name) noexcept -> std::optional<Steps::AbsAddress>;
 
@@ -67,7 +67,7 @@ namespace Minuet::IR::Convert {
         std::unordered_map<std::string, Steps::AbsAddress> m_locals;
         std::queue<Utils::BBLink> m_pending_links;
         std::vector<CFG::CFG> m_result_cfgs;
-        std::vector<Runtime::Value> m_proto_consts;
+        std::vector<Runtime::FastValue> m_proto_consts;
         int m_proto_main_id;
         int m_error_count;
         int16_t m_next_func_aa;

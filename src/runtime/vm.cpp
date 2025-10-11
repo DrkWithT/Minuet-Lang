@@ -6,7 +6,7 @@
 #include "runtime/vm.hpp"
 
 namespace Minuet::Runtime::VM {
-    using Minuet::Runtime::Value;
+    using Minuet::Runtime::FastValue;
 
     static constexpr auto ok_res_value = static_cast<int>(Utils::ExecStatus::ok);
 
@@ -133,11 +133,11 @@ namespace Minuet::Runtime::VM {
             return static_cast<Utils::ExecStatus>(m_res);
         }
 
-        return (m_memory[0] == Value {0}) ? Utils::ExecStatus::ok : Utils::ExecStatus::user_error;
+        return (m_memory[0] == FastValue {0}) ? Utils::ExecStatus::ok : Utils::ExecStatus::user_error;
     }
 
 
-    auto Engine::fetch_value(Code::ArgMode mode, int16_t id) noexcept -> std::optional<Value> {
+    auto Engine::fetch_value(Code::ArgMode mode, int16_t id) noexcept -> std::optional<FastValue> {
         switch (mode) {
             case Code::ArgMode::constant: return m_const_view[id];
             case Code::ArgMode::reg: return m_memory[m_rbp + id];

@@ -1,5 +1,5 @@
-#ifndef MINUET_VM
-#define MINUET_VM
+#ifndef MINUET_RUNTIME_MINUET_VM
+#define MINUET_RUNTIME_MINUET_VM
 
 #include <cstdint>
 #include <optional>
@@ -43,7 +43,7 @@ namespace Minuet::Runtime::VM {
         [[nodiscard]] auto operator()() -> Utils::ExecStatus;
 
     private:
-        [[nodiscard]] auto fetch_value(Code::ArgMode mode, int16_t id) noexcept -> std::optional<Value>;
+        [[nodiscard]] auto fetch_value(Code::ArgMode mode, int16_t id) noexcept -> std::optional<Runtime::FastValue>;
 
         void handle_load_const(uint16_t metadata, int16_t dest, int16_t const_id) noexcept;
         void handle_mov(uint16_t metadata, int16_t dest, int16_t src) noexcept;
@@ -69,11 +69,11 @@ namespace Minuet::Runtime::VM {
         void handle_ret(uint16_t metadata, int16_t src_id) noexcept;
         // void handle_halt(int16_t metadata, int16_t src_id);
 
-        std::vector<Value> m_memory;
+        std::vector<Runtime::FastValue> m_memory;
         std::vector<Utils::CallFrame> m_call_frames;
 
         const Code::Chunk* m_chunk_view;
-        const Value* m_const_view;
+        const FastValue* m_const_view;
         Utils::CallFrame* m_call_frame_ptr;
 
         int16_t m_rfi;  // Contains the callee ID

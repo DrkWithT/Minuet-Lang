@@ -1,11 +1,12 @@
-#ifndef BYTECODE_HPP
-#define BYTECODE_HPP
+#ifndef MINUET_RUNTIME_BYTECODE_HPP
+#define MINUET_RUNTIME_BYTECODE_HPP
 
 #include <cstdint>
+#include <optional>
 #include <vector>
 #include <string_view>
 
-#include "runtime/value.hpp"
+#include "runtime/fast_value.hpp"
 
 namespace Minuet::Runtime::Code {
     enum class Opcode : uint8_t {
@@ -71,7 +72,7 @@ namespace Minuet::Runtime::Code {
     using Chunk = std::vector<Instruction>;
 
     struct Program {
-        std::vector<Runtime::Value> constants;
+        std::vector<Runtime::FastValue> constants;
         std::vector<Chunk> chunks;
         std::optional<int> entry_id;
     };

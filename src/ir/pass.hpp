@@ -1,5 +1,5 @@
-#ifndef PASS_HPP
-#define PASS_HPP
+#ifndef MINUET_IR_PASS_HPP
+#define MINUET_IR_PASS_HPP
 
 #include <concepts>
 

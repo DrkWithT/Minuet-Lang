@@ -1,5 +1,5 @@
-#ifndef EMITTER_HPP
-#define EMITTER_HPP
+#ifndef MINUET_CODEGEN_EMITTER_HPP
+#define MINUET_CODEGEN_EMITTER_HPP
 
 #include <optional>
 #include <vector>

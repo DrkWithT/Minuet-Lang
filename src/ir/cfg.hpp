@@ -1,11 +1,11 @@
-#ifndef CFG_HPP
-#define CFG_HPP
+#ifndef MINUET_IR_CFG_HPP
+#define MINUET_IR_CFG_HPP
 
 #include <optional>
 #include <vector>
 
 #include "ir/steps.hpp"
-#include "runtime/value.hpp"
+#include "runtime/fast_value.hpp"
 
 namespace Minuet::IR::CFG {
     struct BasicBlock {
@@ -44,7 +44,7 @@ namespace Minuet::IR::CFG {
 
     struct FullIR {
         std::vector<CFG> cfg_list;
-        std::vector<Runtime::Value> constants;
+        std::vector<Runtime::FastValue> constants;
         int main_id;
     };
 }

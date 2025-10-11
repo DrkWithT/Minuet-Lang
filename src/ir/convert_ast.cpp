@@ -85,7 +85,7 @@ namespace Minuet::IR::Convert {
         };
     }
 
-    auto ASTConversion::resolve_constant_aa(const std::string& literal, Runtime::Value constant_val) -> std::optional<AbsAddress> {
+    auto ASTConversion::resolve_constant_aa(const std::string& literal, Runtime::FastValue constant_val) -> std::optional<AbsAddress> {
         if (m_globals.contains(literal)) {
             return {m_globals[literal]};
         }
@@ -178,11 +178,11 @@ namespace Minuet::IR::Convert {
         std::optional<AbsAddress> temp;
 
         if (literal_tag == TokenType::literal_false || literal_tag == TokenType::literal_true) {
-            temp = resolve_constant_aa(literal_lexeme, Runtime::Value {literal_lexeme == "true"});
+            temp = resolve_constant_aa(literal_lexeme, Runtime::FastValue {literal_lexeme == "true"});
         } else if (literal_tag == TokenType::literal_int) {
-            temp = resolve_constant_aa(literal_lexeme, Runtime::Value {std::stoi(literal_lexeme)});
+            temp = resolve_constant_aa(literal_lexeme, Runtime::FastValue {std::stoi(literal_lexeme)});
         } else if (literal_tag == TokenType::literal_double) {
-            temp = resolve_constant_aa(literal_lexeme, Runtime::Value {std::stod(literal_lexeme)});
+            temp = resolve_constant_aa(literal_lexeme, Runtime::FastValue {std::stod(literal_lexeme)});
         } else if (literal_tag == TokenType::identifier) {
             temp = lookup_name_aa(literal_lexeme);
         } else {
