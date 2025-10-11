@@ -3,37 +3,56 @@
 #include <set>
 #include <stack>
 
-#include "ir/steps.hpp"
-#include "ir/printing.hpp"
+#include "driver/plugins/ir_dumper.hpp"
 
-namespace Minuet::IR::Printing {
+namespace Minuet::Driver::Plugins {
     using IR::Steps::AbsAddress;
     using IR::Steps::Step;
     using IR::Steps::ir_op_name;
     using IR::Steps::ir_aa_tag_name;
+    using IR::CFG::CFG;
     using IR::CFG::FullIR;
 
-    [[nodiscard]] std::string fmt_step_arg(AbsAddress aa) {
+
+    auto fmt_step_arg(AbsAddress aa) -> std::string {
         return std::format("{}:{}", ir_aa_tag_name(aa.tag), aa.id);
     }
 
-    void print_step(const Step& step) {
-        if (const auto tac_unary_p = std::get_if<Steps::TACUnary>(&step); tac_unary_p) {
+
+    IRDumper::IRDumper() noexcept
+    : m_disabled {false} {}
+
+    void IRDumper::set_disable_flag(bool b) noexcept {
+        m_disabled = b;
+    }
+
+    void IRDumper::operator()(std::any ir_ref_wrap) const {
+        if (m_disabled || ir_ref_wrap.type() != typeid(const IR::CFG::FullIR*)) {
+            return;
+        }
+
+        const IR::CFG::FullIR* ir_view = std::any_cast<const IR::CFG::FullIR*>(ir_ref_wrap);
+
+        print_ir(*ir_view);
+    }
+
+    void IRDumper::print_step(const Step& step) const {
+        if (const auto tac_unary_p = std::get_if<IR::Steps::TACUnary>(&step); tac_unary_p) {
             std::print("{} = {} {}", fmt_step_arg(tac_unary_p->dest), ir_op_name(tac_unary_p->op), fmt_step_arg(tac_unary_p->arg_0));
-        } else if (const auto tac_binary_p = std::get_if<Steps::TACBinary>(&step); tac_binary_p) {
+        } else if (const auto tac_binary_p = std::get_if<IR::Steps::TACBinary>(&step); tac_binary_p) {
             std::print("{} = {} {} {}", fmt_step_arg(tac_binary_p->dest), fmt_step_arg(tac_binary_p->arg_0), ir_op_name(tac_binary_p->op), fmt_step_arg(tac_binary_p->arg_1));
-        } else if (const auto oper_nonary_p = std::get_if<Steps::OperNonary>(&step); oper_nonary_p) {
+        } else if (const auto oper_nonary_p = std::get_if<IR::Steps::OperNonary>(&step); oper_nonary_p) {
             std::print("{}", ir_op_name(oper_nonary_p->op));
-        } else if (const auto oper_unary_p = std::get_if<Steps::OperUnary>(&step); oper_unary_p) {
+        } else if (const auto oper_unary_p = std::get_if<IR::Steps::OperUnary>(&step); oper_unary_p) {
             std::print("{} {}", ir_op_name(oper_unary_p->op), fmt_step_arg(oper_unary_p->arg_0));
-        } else if (const auto oper_binary_p = std::get_if<Steps::OperBinary>(&step); oper_binary_p) {
+        } else if (const auto oper_binary_p = std::get_if<IR::Steps::OperBinary>(&step); oper_binary_p) {
             std::print("{} {} {}", ir_op_name(oper_binary_p->op), fmt_step_arg(oper_binary_p->arg_0), fmt_step_arg(oper_binary_p->arg_1));
         }
 
         std::println();
     }
 
-    void print_cfg(const CFG::CFG& cfg, uint32_t id) {
+    void IRDumper::print_cfg(const CFG& cfg, uint32_t id) const {
         std::set<int> visited_ids;
         std::stack<int> frontier_ids;
 
@@ -68,7 +87,7 @@ namespace Minuet::IR::Printing {
         }
     }
 
-    void print_ir(const FullIR& full_ir) {
+    void IRDumper::print_ir(const FullIR& full_ir) const {
         const auto& [ir_cfgs, ir_constants, entry_id] = full_ir;
 
         std::println("\n\033[1;33mComplete IR:\033[0m\n");

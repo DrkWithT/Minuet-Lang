@@ -1,11 +1,12 @@
-#ifndef DISASSEMBLE_HPP
-#define DISASSEMBLE_HPP
+#ifndef MINUET_PLUGINS_DISASSEMBLER
+#define MINUET_PLUGINS_DISASSEMBLER
 
 #include <string_view>
 
 #include "runtime/bytecode.hpp"
+#include "driver/plugins/printer.hpp"
 
-namespace Minuet::Codegen {
+namespace Minuet::Driver::Plugins {
     template <std::size_t Idx>
     [[nodiscard]] auto arg_mode_name_of(const Runtime::Code::Instruction& inst) noexcept -> std::string_view {
         if constexpr (Idx >= 0 && Idx < 3) {
@@ -24,9 +25,21 @@ namespace Minuet::Codegen {
         return "??";
     }
 
-    void print_instruction(const Runtime::Code::Instruction& inst);
-    void print_chunk(const Runtime::Code::Chunk& chunk);
-    void print_program(const Runtime::Code::Program& program);
+    class Disassembler : public Printer {
+    public:
+        Disassembler() noexcept;
+
+        void set_disable_flag(bool b) noexcept;
+        void operator()(std::any bytecode_ref_wrap) const;
+
+    private:
+        void print_instruction(const Runtime::Code::Instruction& inst) const;
+        void print_chunk(const Runtime::Code::Chunk& chunk) const;
+        void print_program(const Runtime::Code::Program& program) const;
+
+        bool m_disabled;
+
+    };
 }
 
 #endif
