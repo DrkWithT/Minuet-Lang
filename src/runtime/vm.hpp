@@ -5,7 +5,7 @@
 #include <optional>
 #include <vector>
 
-#include "runtime/value.hpp"
+#include "runtime/fast_value.hpp"
 #include "runtime/bytecode.hpp"
 
 namespace Minuet::Runtime::VM {
