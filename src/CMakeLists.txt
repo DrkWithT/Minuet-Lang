@@ -2,13 +2,13 @@ add_library(frontend "")
 target_sources(frontend PRIVATE frontend/lexing.cpp PRIVATE frontend/parsing.cpp)
 
 add_library(ir "")
-target_sources(ir PRIVATE ir/steps.cpp PRIVATE ir/cfg.cpp PRIVATE ir/printing.cpp PRIVATE ir/convert_ast.cpp)
+target_sources(ir PRIVATE ir/steps.cpp PRIVATE ir/cfg.cpp PRIVATE ir/convert_ast.cpp)
 
 add_library(codegen "")
-target_sources(codegen PRIVATE codegen/disassemble.cpp PRIVATE codegen/emitter.cpp)
+target_sources(codegen PRIVATE codegen/emitter.cpp)
 
 add_library(driver "")
-target_sources(driver PRIVATE driver/sources.cpp PRIVATE driver/driver.cpp)
+target_sources(driver PRIVATE driver/plugins/ir_dumper.cpp PRIVATE driver/plugins/disassembler.cpp PRIVATE driver/sources.cpp PRIVATE driver/driver.cpp)
 
 add_library(runtime "")
 target_sources(runtime PRIVATE runtime/value.cpp PRIVATE runtime/bytecode.cpp PRIVATE runtime/vm.cpp)
