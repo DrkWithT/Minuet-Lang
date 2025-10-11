@@ -12,7 +12,6 @@ namespace Minuet::Runtime::VM {
     namespace Utils {
         struct EngineConfig {
             int reg_buffer_limit;
-            int stack_limit;
             int16_t call_frame_max;
         };
 
@@ -21,6 +20,8 @@ namespace Minuet::Runtime::VM {
             int16_t old_func_ip;
             int old_base_ptr;
             int old_mem_top; // old register frame top
+            int old_exec_status;
+            bool old_flag_val;
         };
 
         enum class ExecStatus : int {
@@ -43,9 +44,6 @@ namespace Minuet::Runtime::VM {
 
     private:
         [[nodiscard]] auto fetch_value(Code::ArgMode mode, int16_t id) noexcept -> std::optional<Value>;
-
-        [[maybe_unused]] auto push_value(Value&& value) noexcept -> bool;
-        [[nodiscard]] auto pop_value() noexcept -> std::optional<Value>;
 
         void handle_load_const(uint16_t metadata, int16_t dest, int16_t const_id) noexcept;
         void handle_mov(uint16_t metadata, int16_t dest, int16_t src) noexcept;
@@ -72,7 +70,6 @@ namespace Minuet::Runtime::VM {
         // void handle_halt(int16_t metadata, int16_t src_id);
 
         std::vector<Value> m_memory;
-        std::vector<Value> m_stack;
         std::vector<Utils::CallFrame> m_call_frames;
 
         const Code::Chunk* m_chunk_view;

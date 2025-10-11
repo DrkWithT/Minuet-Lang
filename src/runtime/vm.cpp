@@ -11,17 +11,13 @@ namespace Minuet::Runtime::VM {
     static constexpr auto ok_res_value = static_cast<int>(Utils::ExecStatus::ok);
 
     Engine::Engine(Utils::EngineConfig config, Code::Program& prgm)
-    : m_memory {}, m_stack {}, m_call_frames {}, m_chunk_view {}, m_const_view {}, m_call_frame_ptr {nullptr}, m_rfi {}, m_rip {}, m_rbp {}, m_rft {}, m_rsp {}, m_res {}, m_consts_n {}, m_rrd {}, m_rfv {} {
-        const auto [mem_limit, stack_limit, recur_depth_max] = config;
+    : m_memory {}, m_call_frames {}, m_chunk_view {}, m_const_view {}, m_call_frame_ptr {nullptr}, m_rfi {}, m_rip {}, m_rbp {}, m_rft {}, m_rsp {}, m_res {}, m_consts_n {}, m_rrd {}, m_rfv {} {
+        const auto [mem_limit, recur_depth_max] = config;
         const auto prgm_entry_fn_id = prgm.entry_id.value_or(-1);
 
         const auto mem_vec_size = static_cast<std::size_t>(mem_limit);
         m_memory.reserve(mem_vec_size);
         m_memory.resize(mem_vec_size);
-
-        const auto stack_vec_size = static_cast<std::size_t>(stack_limit);
-        m_stack.reserve(stack_vec_size);
-        m_stack.resize(stack_vec_size);
 
         m_call_frames.reserve(recur_depth_max);
         m_call_frames.resize(recur_depth_max);
@@ -46,16 +42,15 @@ namespace Minuet::Runtime::VM {
             .old_func_ip = 0,
             .old_base_ptr = 0,
             .old_mem_top = 0,
+            .old_exec_status = ok_res_value,
+            .old_flag_val = false,
         };
         ++m_rrd; // NOTE: main is implicitly called if present... call depth is now 1 to count this!
     }
 
     auto Engine::operator()() -> Utils::ExecStatus {
-        push_value(Value {m_res});
-        push_value(Value {m_rfv});
-
         while (m_rrd > 0 && m_res == ok_res_value) {
-            const auto [args, metadata, opcode] = m_chunk_view[m_rfi][m_rip];
+            const auto& [args, metadata, opcode] = m_chunk_view[m_rfi][m_rip];
 
             // std::println("RFI = {}, RIP = {}, RBP = {}, RFT = {}, RSP = {}, opcode: {}", m_rfi, m_rip, m_rbp, m_rft, m_rsp, Code::opcode_name(opcode)); // debug
 
@@ -146,24 +141,10 @@ namespace Minuet::Runtime::VM {
         switch (mode) {
             case Code::ArgMode::constant: return m_const_view[id];
             case Code::ArgMode::reg: return m_memory[m_rbp + id];
-            case Code::ArgMode::stack: return m_stack[m_rsp];
-            case Code::ArgMode::heap: default: return {};
+            case Code::ArgMode::stack:
+            case Code::ArgMode::heap:
+            default: return {};
         }
-    }
-
-    auto Engine::push_value(Value&& value) noexcept -> bool {
-        ++m_rsp;
-        m_stack[m_rsp] = std::move(value);
-
-        return true;
-    }
-
-    auto Engine::pop_value() noexcept -> std::optional<Value> {
-        const auto old_rsp = m_rsp;
-
-        --m_rsp;
-
-        return m_stack[old_rsp];
     }
 
     void Engine::handle_load_const([[maybe_unused]] uint16_t metadata, int16_t dest, int16_t const_id) noexcept {
@@ -410,18 +391,12 @@ namespace Minuet::Runtime::VM {
      * @param arg_count 
      */
     void Engine::handle_call(int16_t func_id, int16_t arg_count) noexcept {
-        const auto res_save_ok = push_value(Value {m_res});
-        const auto rfv_save_ok = push_value(Value {m_rfv});
-
-        if (!res_save_ok || !rfv_save_ok) {
-            m_res = static_cast<int>(Utils::ExecStatus::mem_error);
-            return;
-        }
-
         const auto old_rfi = m_rfi;
         const int16_t old_rip = m_rip + 1;
         const auto old_rbp = m_rbp;
         const auto old_rft = m_rft;
+        const auto old_res = m_res;
+        const auto old_rfv = m_rfv;
 
         ++m_call_frame_ptr;
         *m_call_frame_ptr = Utils::CallFrame {
@@ -429,6 +404,8 @@ namespace Minuet::Runtime::VM {
             .old_func_ip = old_rip,
             .old_base_ptr = old_rbp,
             .old_mem_top = old_rft,
+            .old_exec_status = old_res,
+            .old_flag_val = old_rfv,
         };
         ++m_rrd;
         
@@ -449,7 +426,7 @@ namespace Minuet::Runtime::VM {
         m_memory[m_rbp] = std::move(ret_src_opt.value());
 
         /// 2. Restore the caller's call state
-        auto [caller_rfi, caller_rip, caller_rbp, caller_rft] = *m_call_frame_ptr;
+        auto [caller_rfi, caller_rip, caller_rbp, caller_rft, caller_res, caller_rfv] = *m_call_frame_ptr;
         --m_call_frame_ptr;
         --m_rrd;
 
@@ -457,18 +434,7 @@ namespace Minuet::Runtime::VM {
         m_rip = caller_rip;
         m_rbp = caller_rbp;
         m_rft = caller_rft;
-
-        if (auto saved_rfv_box = pop_value(); saved_rfv_box) {
-            m_rfv = saved_rfv_box.value().unbox_type<bool>().value();
-        } else {
-            m_res = static_cast<int>(Utils::ExecStatus::mem_error);
-            return;
-        }
-
-        if (auto saved_res_box = pop_value(); saved_res_box) {
-            m_res = saved_res_box.value().unbox_type<int>().value();
-        } else {
-            m_res = static_cast<int>(Utils::ExecStatus::mem_error);
-        }
+        m_res = caller_res;
+        m_rfv = caller_rfv;
     }
 }

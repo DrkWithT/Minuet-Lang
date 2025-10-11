@@ -25,7 +25,6 @@ namespace Minuet::Driver {
 
     static constexpr auto normal_vm_config = EngineConfig {
         .reg_buffer_limit = 8192,
-        .stack_limit = 1024,
         .call_frame_max = 512,
     };
 

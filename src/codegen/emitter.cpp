@@ -48,6 +48,7 @@ namespace Minuet::Codegen {
     auto Emitter::translate_value_aa(IR::Steps::AbsAddress aa) noexcept -> std::optional<Utils::PseudoArg> {
         const auto [aa_tag, aa_value] = aa;
 
+        /// NOTE: remove AbsAddrTag::stack support?
         const auto pseudo_arg_tag = ([](AbsAddrTag aa_tag) noexcept -> std::optional<ArgMode> {
             switch (aa_tag) {
                 case AbsAddrTag::immediate: return ArgMode::immediate;
