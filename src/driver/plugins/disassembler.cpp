@@ -11,11 +11,11 @@ namespace Minuet::Driver::Plugins {
     }
 
     void Disassembler::operator()(std::any bytecode_ref_wrap) const {
-        if (m_disabled || bytecode_ref_wrap.type() != typeid(const Runtime::Code::Program*)) {
+        if (m_disabled || bytecode_ref_wrap.type() != typeid(Runtime::Code::Program*)) {
             return;
         }
 
-        const Runtime::Code::Program* program_view = std::any_cast<const Runtime::Code::Program*>(bytecode_ref_wrap);
+        const Runtime::Code::Program* program_view = std::any_cast<Runtime::Code::Program*>(bytecode_ref_wrap);
 
         print_program(*program_view);
     }

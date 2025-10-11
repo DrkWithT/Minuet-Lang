@@ -142,9 +142,11 @@ namespace Minuet::Driver {
             return false;
         }
 
-        m_ir_printer->operator()(&program_ir_opt.value());
+        auto& program_ir = program_ir_opt.value();
 
-        auto program_opt = generate_program(program_ir_opt.value());
+        m_ir_printer->operator()(&program_ir);
+
+        auto program_opt = generate_program(program_ir);
 
         if (!program_opt) {
             return false;
@@ -152,7 +154,7 @@ namespace Minuet::Driver {
 
         auto& program = program_opt.value();
 
-        m_disassembler->operator()(&program_opt);
+        m_disassembler->operator()(&program);
 
         Runtime::VM::Engine vm {normal_vm_config, program};
 
@@ -165,12 +167,10 @@ namespace Minuet::Driver {
         switch (exec_status) {
             case ExecStatus::ok:
                 std::println("\033[1;32mStatus OK\033[0m\n");
-                return 0;
+                return true;
             default:
                 std::println(std::cerr, "\033[1;31mRuntime Error: Exited with ExecStatus #{}, see vm.md for details.\033[0m\n", static_cast<int>(exec_status));
-                return 1;
+                return false;
         }
-
-        return true;
     }
 }

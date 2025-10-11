@@ -50,7 +50,8 @@ public:
 int main(int argc, char* argv[]) {
     if (argc <= 1) {
         std::println(std::cerr, "Invalid argument count, try 'minuetm info' for help.");
-        return 0;
+
+        return 1;
     }
 
     std::string arg_1 {argv[1]};
@@ -60,14 +61,16 @@ int main(int argc, char* argv[]) {
     Driver::Driver app;
 
     if (arg_1 == "info") {
-        std::println("minuetm v{}.{}.{}\n\nUsage: ./minuetm [info | <program-file>]\n\tinfo []: shows usage info and version.", minuet_version_major, minuet_version_minor, minuet_version_patch);
+        std::println("minuetm v{}.{}.{}\n\nUsage: ./minuetm [info | compile-only <main-file> | run <main-file>]\n\tinfo []: shows usage info and version.", minuet_version_major, minuet_version_minor, minuet_version_patch);
+
         return 0;
-    } else if (arg_1 == "compile-only") {
+    } else if (arg_1 == "compile-only" && !arg_2.empty()) {
         app = driver_builder.config_ir_dumper(true)->config_bc_dumper(true)->build();
     } else if (arg_1 == "run" && !arg_2.empty()) {
         app = driver_builder.config_ir_dumper(false)->config_bc_dumper(false)->build();
     } else {
-        std::println("Usage: ./minuetm [info | <program-file>]\n\tinfo []: shows usage info and version.");
+        std::println("minuetm v{}.{}.{}\n\nUsage: ./minuetm [info | compile-only <main-file> | run <main-file>]\n\tinfo []: shows usage info and version.", minuet_version_major, minuet_version_minor, minuet_version_patch);
+
         return 1;
     }
 

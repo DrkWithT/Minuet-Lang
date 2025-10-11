@@ -27,11 +27,11 @@ namespace Minuet::Driver::Plugins {
     }
 
     void IRDumper::operator()(std::any ir_ref_wrap) const {
-        if (m_disabled || ir_ref_wrap.type() != typeid(const IR::CFG::FullIR*)) {
+        if (m_disabled || ir_ref_wrap.type() != typeid(IR::CFG::FullIR*)) {
             return;
         }
 
-        const IR::CFG::FullIR* ir_view = std::any_cast<const IR::CFG::FullIR*>(ir_ref_wrap);
+        const IR::CFG::FullIR* ir_view = std::any_cast<IR::CFG::FullIR*>(ir_ref_wrap);
 
         print_ir(*ir_view);
     }
