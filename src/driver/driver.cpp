@@ -1,24 +1,36 @@
 #include <set>
 #include <stack>
+#include <chrono>
+#include <memory>
+#include <iostream>
 
 #include "ir/convert_ast.hpp"
-// #include "ir/printing.hpp"
 #include "codegen/emitter.hpp"
+#include "runtime/vm.hpp"
 #include "driver/sources.hpp"
 #include "driver/driver.hpp"
 
-namespace Minuet::Driver::Compilation {
+namespace Minuet::Driver {
     using Frontend::Lexicals::TokenType;
     using Frontend::Parsing::Parser;
     using Syntax::AST::SourcedAST;
     using Syntax::AST::FullAST;
     using IR::CFG::FullIR;
     using IR::Convert::ASTConversion;
-    // using IR::Printing::print_ir;
-    using Driver::Sources::read_source;
+    using Runtime::VM::Utils::EngineConfig;
+    using Runtime::VM::Utils::ExecStatus;
+    using Plugins::IRDumper;
+    using Plugins::Disassembler;
+    using Sources::read_source;
 
-    CompileDriver::CompileDriver()
-    : m_lexer {}, m_src_map {} {
+    static constexpr auto normal_vm_config = EngineConfig {
+        .reg_buffer_limit = 8192,
+        .stack_limit = 1024,
+        .call_frame_max = 512,
+    };
+
+    Driver::Driver()
+    : m_lexer {}, m_src_map {}, m_ir_printer {}, m_disassembler {} {
         m_lexer.add_lexical_item({.text = "import", .tag = TokenType::keyword_import});
         m_lexer.add_lexical_item({.text = "fun", .tag = TokenType::keyword_fun});
         m_lexer.add_lexical_item({.text = "def", .tag = TokenType::keyword_def});
@@ -43,7 +55,7 @@ namespace Minuet::Driver::Compilation {
         m_lexer.add_lexical_item({.text = "=>", .tag = TokenType::arrow});
     }
 
-    auto CompileDriver::parse_sources(const std::filesystem::path& main_path) -> std::optional<FullAST> {
+    auto Driver::parse_sources(const std::filesystem::path& main_path) -> std::optional<FullAST> {
         std::set<std::string> visited_paths;
         std::stack<Utils::PendingSource> sources_frontier;
         FullAST full_ast;
@@ -91,7 +103,7 @@ namespace Minuet::Driver::Compilation {
         return full_ast;
     }
 
-    auto CompileDriver::generate_ir(const FullAST& ast) -> std::optional<FullIR> {
+    auto Driver::generate_ir(const FullAST& ast) -> std::optional<FullIR> {
         ASTConversion ir_generator;
 
         auto ir_opt = ir_generator(ast, m_src_map);
@@ -103,28 +115,62 @@ namespace Minuet::Driver::Compilation {
         return ir_opt.value();
     }
 
-    [[maybe_unused]] auto CompileDriver::generate_program(IR::CFG::FullIR& ir) -> std::optional<Runtime::Code::Program> {
+    [[maybe_unused]] auto Driver::generate_program(IR::CFG::FullIR& ir) -> std::optional<Runtime::Code::Program> {
         Codegen::Emitter emitter;
 
         return emitter(ir);
     }
 
-    auto CompileDriver::operator()(const std::filesystem::path& entry_source_path) -> std::optional<Runtime::Code::Program> {
+    void Driver::add_ir_dumper(IRDumper ir_printer) noexcept {
+        m_ir_printer = std::make_unique<IRDumper>(ir_printer);
+    }
+
+    void Driver::add_disassembler(Disassembler bc_printer) noexcept {
+        m_disassembler = std::make_unique<Disassembler>(bc_printer);
+    }
+
+    auto Driver::operator()(const std::filesystem::path& entry_source_path) -> bool {
         auto parsed_program = parse_sources(entry_source_path);
 
         if (!parsed_program) {
-            return {};
+            return false;
         }
 
         auto program_ir_opt = generate_ir(parsed_program.value());
 
         if (!program_ir_opt) {
-            return {};
+            return false;
         }
 
-        /// NOTE: print the IR to check its correctness!
-        // print_ir(program_ir_opt.value());
+        m_ir_printer->operator()(&program_ir_opt.value());
 
-        return generate_program(program_ir_opt.value());
+        auto program_opt = generate_program(program_ir_opt.value());
+
+        if (!program_opt) {
+            return false;
+        }
+
+        auto& program = program_opt.value();
+
+        m_disassembler->operator()(&program_opt);
+
+        Runtime::VM::Engine vm {normal_vm_config, program};
+
+        auto run_start = std::chrono::steady_clock::now();
+        const auto exec_status = vm();
+        auto run_end = std::chrono::steady_clock::now();
+
+        std::println("Finished in: {}\n", std::chrono::duration_cast<std::chrono::milliseconds>(run_end - run_start));
+
+        switch (exec_status) {
+            case ExecStatus::ok:
+                std::println("\033[1;32mStatus OK\033[0m\n");
+                return 0;
+            default:
+                std::println(std::cerr, "\033[1;31mRuntime Error: Exited with ExecStatus #{}, see vm.md for details.\033[0m\n", static_cast<int>(exec_status));
+                return 1;
+        }
+
+        return true;
     }
 }
