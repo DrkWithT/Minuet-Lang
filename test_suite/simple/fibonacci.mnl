@@ -9,9 +9,9 @@ fun fibo: [n] => {
 }
 
 fun main: [] => {
-    def ans = fibo(35)
+    def ans = fibo(40)
 
-    if ans != 9227465 {
+    if ans != 102334155 {
         return 1
     }
 
