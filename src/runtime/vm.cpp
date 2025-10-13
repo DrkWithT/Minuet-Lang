@@ -10,8 +10,8 @@ namespace Minuet::Runtime::VM {
 
     static constexpr auto ok_res_value = static_cast<int>(Utils::ExecStatus::ok);
 
-    Engine::Engine(Utils::EngineConfig config, Code::Program& prgm)
-    : m_memory {}, m_call_frames {}, m_chunk_view {}, m_const_view {}, m_call_frame_ptr {nullptr}, m_rfi {}, m_rip {}, m_rbp {}, m_rft {}, m_rsp {}, m_res {}, m_consts_n {}, m_rrd {}, m_rfv {} {
+    Engine::Engine(Utils::EngineConfig config, Code::Program& prgm, std::any native_fn_table_wrap)
+    : m_memory {}, m_call_frames {}, m_chunk_view {}, m_const_view {}, m_call_frame_ptr {nullptr}, m_native_funcs {}, m_rfi {}, m_rip {}, m_rbp {}, m_rft {}, m_rsp {}, m_res {}, m_consts_n {}, m_rrd {}, m_rfv {} {
         const auto [mem_limit, recur_depth_max] = config;
         const auto prgm_entry_fn_id = prgm.entry_id.value_or(-1);
 
@@ -25,15 +25,18 @@ namespace Minuet::Runtime::VM {
         m_chunk_view = prgm.chunks.data();
         m_const_view = prgm.constants.data();
         m_call_frame_ptr = m_call_frames.data();
+        m_native_funcs = (native_fn_table_wrap.type() == typeid(Runtime::NativeProcTable*))
+            ? std::any_cast<Runtime::NativeProcTable*>(native_fn_table_wrap)
+            : nullptr;
 
         m_rfi = prgm_entry_fn_id;
         m_rip = 0;
         m_rbp = 0;
         m_rft = 0;
         m_rsp = -1;
-        m_res = (prgm_entry_fn_id >= 0)
+        m_res = (prgm_entry_fn_id >= 0 && m_native_funcs != nullptr)
             ? static_cast<int>(Utils::ExecStatus::ok)
-            : static_cast<int>(Utils::ExecStatus::entry_error);
+            : static_cast<int>(Utils::ExecStatus::setup_error);
 
         m_consts_n = static_cast<int>(prgm.constants.size());
 
@@ -122,6 +125,8 @@ namespace Minuet::Runtime::VM {
                     handle_ret(metadata, args[0]);
                     break;
                 case Code::Opcode::native_call:
+                    handle_native_call(args[0], args[1]);
+                    break;
                 case Code::Opcode::halt:
                 default:
                     m_res = static_cast<int>(Utils::ExecStatus::op_error);
@@ -134,6 +139,18 @@ namespace Minuet::Runtime::VM {
         }
 
         return (m_memory[0] == FastValue {0}) ? Utils::ExecStatus::ok : Utils::ExecStatus::user_error;
+    }
+
+    auto Engine::handle_native_fn_access(int16_t arg_count, int16_t offset) & noexcept -> Runtime::FastValue& {
+        const auto native_call_base_slot = m_rft - arg_count + 1;
+
+        return m_memory[native_call_base_slot + offset];
+    }
+
+    void Engine::handle_native_fn_return(Runtime::FastValue&& result, [[maybe_unused]] int16_t arg_count) noexcept {
+        const auto native_call_base_slot = m_rft - arg_count + 1;
+
+        m_memory[native_call_base_slot] = std::move(result);
     }
 
 
@@ -408,14 +425,16 @@ namespace Minuet::Runtime::VM {
             .old_flag_val = old_rfv,
         };
         ++m_rrd;
-        
+
         m_rfi = func_id;
         m_rip = 0;
         m_rbp = m_rft - arg_count + 1;
     }
 
-    void Engine::handle_native_call([[maybe_unused]] int16_t native_id) noexcept {
-        m_res = static_cast<int>(Utils::ExecStatus::op_error);
+    void Engine::handle_native_call(int16_t native_id, int16_t arg_count) noexcept {
+        m_res = (m_native_funcs->data()[native_id](*this, arg_count)) ? ok_res_value : static_cast<int>(Utils::ExecStatus::op_error);
+
+        ++m_rip;
     }
 
     void Engine::handle_ret(uint16_t metadata, int16_t src_id) noexcept {

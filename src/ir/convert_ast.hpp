@@ -13,6 +13,7 @@
 #include "ir/steps.hpp"
 #include "ir/cfg.hpp"
 #include "runtime/fast_value.hpp"
+#include "runtime/natives.hpp"
 
 namespace Minuet::IR::Convert {
     namespace Utils {
@@ -31,7 +32,7 @@ namespace Minuet::IR::Convert {
 
     class ASTConversion {
     public:
-        ASTConversion();
+        ASTConversion(const Runtime::NativeProcRegistry* native_proc_ids);
 
         [[nodiscard]] auto operator()(const Syntax::AST::FullAST& src_mapped_ast, const std::vector<std::string>& source_map) -> std::optional<CFG::FullIR>;
 
@@ -68,6 +69,7 @@ namespace Minuet::IR::Convert {
         std::queue<Utils::BBLink> m_pending_links;
         std::vector<CFG::CFG> m_result_cfgs;
         std::vector<Runtime::FastValue> m_proto_consts;
+        const Runtime::NativeProcRegistry* m_native_proc_ids;
         int m_proto_main_id;
         int m_error_count;
         int16_t m_next_func_aa;

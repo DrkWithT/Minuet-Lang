@@ -26,8 +26,8 @@ namespace Minuet::IR::Convert {
     using IR::CFG::FullIR;
     using Utils::NameLocation;
 
-    ASTConversion::ASTConversion()
-    : m_globals {}, m_locals {}, m_pending_links {}, m_result_cfgs {}, m_proto_consts {}, m_proto_main_id {-1}, m_error_count {0}, m_next_func_aa {0}, m_next_local_aa {0}, m_prepassing {true} {}
+    ASTConversion::ASTConversion(const Runtime::NativeProcRegistry* native_proc_ids)
+    : m_globals {}, m_locals {}, m_pending_links {}, m_result_cfgs {}, m_proto_consts {}, m_native_proc_ids {native_proc_ids}, m_proto_main_id {-1}, m_error_count {0}, m_next_func_aa {0}, m_next_local_aa {0}, m_prepassing {true} {}
 
     auto ASTConversion::operator()(const Syntax::AST::FullAST& src_mapped_ast, const std::vector<std::string>& source_map) -> std::optional<FullIR> {
         // 1. Prepass top-level definitions of functions, etc. to avoid forward declaration jank.
@@ -138,7 +138,12 @@ namespace Minuet::IR::Convert {
     }
 
     auto ASTConversion::lookup_name_aa(const std::string& name) noexcept -> std::optional<AbsAddress> {
-        if (m_globals.contains(name)) {
+        if (m_native_proc_ids->contains(name)) {
+            return AbsAddress {
+                .id = static_cast<int16_t>(m_native_proc_ids->at(name)),
+                .tag = AbsAddrTag::constant,
+            };
+        } else if (m_globals.contains(name)) {
             return m_globals[name];
         } else if (m_locals.contains(name)) {
             return m_locals[name];
@@ -280,20 +285,20 @@ namespace Minuet::IR::Convert {
 
         /// NOTE: Any call will take the function ID and then N (stack argument count).
         const int16_t real_args_n = call.args.size();
-
+        
         for (int16_t arg_idx = 0; arg_idx < real_args_n; ++arg_idx) {
             if (auto arg_aa_opt = emit_expr(call.args.at(arg_idx), source); arg_aa_opt) {
                 const auto arg_dest = gen_temp_aa().value();
-
+                
                 m_result_cfgs.back().get_newest_bb().value()->steps.emplace_back(TACUnary {
                     .dest = arg_dest,
                     .arg_0 = arg_aa_opt.value(),
                     .op = Op::nop,
                 });
-
+                
                 continue;
             }
-
+            
             return {};
         }
 
@@ -302,13 +307,22 @@ namespace Minuet::IR::Convert {
             .tag = AbsAddrTag::temp,
         };
 
+        auto callee_aa = callee_aa_opt.value();
+        /// NOTE: the IR `Op` for call expressions will be `native_call` upon an AbsAddress with reused tag `constant`... This denotes a function pointer ID from the native procedure "registry".
+        const auto calling_op = (callee_aa.tag == AbsAddrTag::immediate)
+            ? Op::call
+            : Op::native_call;
+
         m_result_cfgs.back().get_newest_bb().value()->steps.emplace_back(OperBinary {
-            .arg_0 = callee_aa_opt.value(),
+            .arg_0 = {
+                .id = callee_aa.id,
+                .tag = AbsAddrTag::immediate,
+            },
             .arg_1 = {
                 .id = real_args_n,
                 .tag = AbsAddrTag::immediate,
             },
-            .op = Op::call,
+            .op = calling_op,
         });
 
         return call_result_slot_aa;

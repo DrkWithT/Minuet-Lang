@@ -1,12 +1,14 @@
 #ifndef MINUET_RUNTIME_MINUET_VM
 #define MINUET_RUNTIME_MINUET_VM
 
+#include <any>
 #include <cstdint>
 #include <optional>
 #include <vector>
 
 #include "runtime/fast_value.hpp"
 #include "runtime/bytecode.hpp"
+#include "runtime/natives.hpp"
 
 namespace Minuet::Runtime::VM {
     namespace Utils {
@@ -26,7 +28,7 @@ namespace Minuet::Runtime::VM {
 
         enum class ExecStatus : int {
             ok = 0,
-            entry_error,  // invalid main ID
+            setup_error,  // invalid setup
             op_error,     // invalid opcode
             arg_error,    // invalid opcode arg
             mem_error,    // bad VM memory access
@@ -38,9 +40,13 @@ namespace Minuet::Runtime::VM {
 
     class Engine {
     public:
-        Engine(Utils::EngineConfig config, Code::Program& prgm);
+        Engine(Utils::EngineConfig config, Code::Program& prgm, std::any native_fn_table);
 
         [[nodiscard]] auto operator()() -> Utils::ExecStatus;
+
+        [[nodiscard]] auto handle_native_fn_access(int16_t arg_count, int16_t offset) & noexcept -> Runtime::FastValue&;
+
+        void handle_native_fn_return(Runtime::FastValue&& result, [[maybe_unused]] int16_t arg_count) noexcept;
 
     private:
         [[nodiscard]] auto fetch_value(Code::ArgMode mode, int16_t id) noexcept -> std::optional<Runtime::FastValue>;
@@ -65,7 +71,7 @@ namespace Minuet::Runtime::VM {
         void handle_jmp_if(int16_t dest_ip) noexcept;
         void handle_jmp_else(int16_t dest_ip) noexcept;
         void handle_call(int16_t func_id, int16_t arg_count) noexcept;
-        void handle_native_call(int16_t native_id) noexcept;
+        void handle_native_call(int16_t native_id, [[maybe_unused]] int16_t arg_count) noexcept;
         void handle_ret(uint16_t metadata, int16_t src_id) noexcept;
         // void handle_halt(int16_t metadata, int16_t src_id);
 
@@ -75,6 +81,7 @@ namespace Minuet::Runtime::VM {
         const Code::Chunk* m_chunk_view;
         const FastValue* m_const_view;
         Utils::CallFrame* m_call_frame_ptr;
+        const Runtime::NativeProcTable* m_native_funcs;
 
         int16_t m_rfi;  // Contains the callee ID
         int16_t m_rip;  // Contains the instruction index in the callee's chunk

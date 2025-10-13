@@ -19,6 +19,8 @@ namespace Minuet::Driver {
     using IR::Convert::ASTConversion;
     using Runtime::VM::Utils::EngineConfig;
     using Runtime::VM::Utils::ExecStatus;
+    using Runtime::NativeProcTable;
+    using Runtime::NativeProcRegistry;
     using Plugins::IRDumper;
     using Plugins::Disassembler;
     using Sources::read_source;
@@ -29,9 +31,10 @@ namespace Minuet::Driver {
     };
 
     Driver::Driver()
-    : m_lexer {}, m_src_map {}, m_ir_printer {}, m_disassembler {} {
+    : m_lexer {}, m_src_map {}, m_native_procs {}, m_native_proc_ids {}, m_ir_printer {}, m_disassembler {} {
         m_lexer.add_lexical_item({.text = "import", .tag = TokenType::keyword_import});
         m_lexer.add_lexical_item({.text = "fun", .tag = TokenType::keyword_fun});
+        m_lexer.add_lexical_item({.text = "native", .tag = TokenType::keyword_native});
         m_lexer.add_lexical_item({.text = "def", .tag = TokenType::keyword_def});
         m_lexer.add_lexical_item({.text = "if", .tag = TokenType::keyword_if});
         m_lexer.add_lexical_item({.text = "else", .tag = TokenType::keyword_else});
@@ -52,6 +55,21 @@ namespace Minuet::Driver {
         m_lexer.add_lexical_item({.text = ">=", .tag = TokenType::oper_at_least});
         m_lexer.add_lexical_item({.text = "=", .tag = TokenType::oper_assign});
         m_lexer.add_lexical_item({.text = "=>", .tag = TokenType::arrow});
+    }
+
+    auto Driver::register_native_proc(const Runtime::NativeProcItem& item) -> bool {
+        const auto& [native_fn_name, native_fn_ptr] = item;
+        const int next_native_fn_id = m_native_proc_ids.size();
+        std::string key {native_fn_name.data()};
+
+        if (m_native_proc_ids.contains(key)) {
+            return false;
+        }
+
+        m_native_proc_ids[key] = next_native_fn_id;
+        m_native_procs.emplace_back(native_fn_ptr);
+
+        return true;
     }
 
     auto Driver::parse_sources(const std::filesystem::path& main_path) -> std::optional<FullAST> {
@@ -103,7 +121,7 @@ namespace Minuet::Driver {
     }
 
     auto Driver::generate_ir(const FullAST& ast) -> std::optional<FullIR> {
-        ASTConversion ir_generator;
+        ASTConversion ir_generator {&m_native_proc_ids};
 
         auto ir_opt = ir_generator(ast, m_src_map);
 
@@ -155,7 +173,7 @@ namespace Minuet::Driver {
 
         m_disassembler->operator()(&program);
 
-        Runtime::VM::Engine vm {normal_vm_config, program};
+        Runtime::VM::Engine vm {normal_vm_config, program, &m_native_procs};
 
         auto run_start = std::chrono::steady_clock::now();
         const auto exec_status = vm();
