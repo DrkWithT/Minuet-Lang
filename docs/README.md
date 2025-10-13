@@ -36,10 +36,11 @@ _Minuet_ is a small, Python & C inspired language for simple programs. Unlike sh
 <program> = (<import> | <function> | <native>)* EOF
 <function> = "fun" <identifier> ":" "[" <identifier> ("," <identifier>)* "]" "=>" <block>
 <native> = "native" "fun" <identifier> ":" "[" <identifier> ("," <identifier>)* "]"
-<block> = "{" (<definition> | <if> | <return> | <for-count-loop> | <expr-stmt>)+ "}"
+<block> = "{" (<definition> | <if> | <return> | <while> | <for-count-loop> | <expr-stmt>)+ "}"
 <definition> = "def" <identifier> ":=" <compare> <terminator>
 <if> = "if" <compare> <block> ("else" <block>)?
 <return> = "return" <compare>
+<while> = "while" <compare> <block>
 <for-count-loop> = "count" <identifier> ":" <integer> "->" <integer> "do" <block>
 <expr-stmt> = <expr> <terminator>
 
@@ -50,6 +51,8 @@ _Minuet_ is a small, Python & C inspired language for simple programs. Unlike sh
 ```
 
 ### Roadmap
- - Test simple import support.
- - Add _for-count-loop_ support.
- - Add a simple bytecode optimization pass.
+ - `0.3.0`: Add _while_ and _for-count_ loop support.
+ - `0.3.1`: Add simple bytecode optimization passes, following dependency injection.
+   - Unused variable elimination
+   - Reduction of useless `mov` and `nop` instructions
+   - Dead branch elimination
