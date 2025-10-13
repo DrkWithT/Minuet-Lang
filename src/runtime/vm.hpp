@@ -22,11 +22,11 @@ namespace Minuet::Runtime::VM {
             int16_t old_func_ip;
             int old_base_ptr;
             int old_mem_top; // old register frame top
-            int old_exec_status;
+            uint8_t old_exec_status;
             bool old_flag_val;
         };
 
-        enum class ExecStatus : int {
+        enum class ExecStatus : uint8_t {
             ok = 0,
             setup_error,  // invalid setup
             op_error,     // invalid opcode
@@ -88,9 +88,9 @@ namespace Minuet::Runtime::VM {
         int m_rbp;  // Contains the base point of the current register frame in memory
         int m_rft;  // Contains highest memory cell used
         int m_rsp;
-        int m_res;  // Contains execution status code
         int m_consts_n;
         int16_t m_rrd; // Counts 1-based recursion depth- 0 means done!
+        uint8_t m_res;  // Contains execution status code
         bool m_rfv; // Represents conditional-test flag value
     };
 }

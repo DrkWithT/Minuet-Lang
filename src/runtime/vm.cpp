@@ -11,7 +11,7 @@ namespace Minuet::Runtime::VM {
     static constexpr auto ok_res_value = static_cast<int>(Utils::ExecStatus::ok);
 
     Engine::Engine(Utils::EngineConfig config, Code::Program& prgm, std::any native_fn_table_wrap)
-    : m_memory {}, m_call_frames {}, m_chunk_view {}, m_const_view {}, m_call_frame_ptr {nullptr}, m_native_funcs {}, m_rfi {}, m_rip {}, m_rbp {}, m_rft {}, m_rsp {}, m_res {}, m_consts_n {}, m_rrd {}, m_rfv {} {
+    : m_memory {}, m_call_frames {}, m_chunk_view {}, m_const_view {}, m_call_frame_ptr {nullptr}, m_native_funcs {}, m_rfi {}, m_rip {}, m_rbp {}, m_rft {}, m_rsp {}, m_consts_n {}, m_rrd {}, m_res {}, m_rfv {} {
         const auto [mem_limit, recur_depth_max] = config;
         const auto prgm_entry_fn_id = prgm.entry_id.value_or(-1);
 
