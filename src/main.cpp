@@ -1,6 +1,7 @@
 #include <iostream>
 #include <print>
 
+#include "runtime/vm.hpp"
 #include "driver/driver.hpp"
 #include "driver/plugins/disassembler.hpp"
 #include "driver/plugins/ir_dumper.hpp"
@@ -9,7 +10,16 @@ constexpr auto minuet_version_major = 0;
 constexpr auto minuet_version_minor = 2;
 constexpr auto minuet_version_patch = 0;
 
+
 using namespace Minuet;
+
+[[nodiscard]] auto native_print_value(Runtime::VM::Engine& vm, int16_t argc) -> bool {
+    const auto& argument_value = vm.handle_native_fn_access(argc, 0);
+
+    std::println("{}", argument_value.to_string());
+
+    return true;
+}
 
 class DriverBuilder {
 private:
@@ -73,6 +83,8 @@ int main(int argc, char* argv[]) {
 
         return 1;
     }
+
+    app.register_native_proc({"print", native_print_value});
 
     return app(arg_2) ? 0 : 1 ;
 }
