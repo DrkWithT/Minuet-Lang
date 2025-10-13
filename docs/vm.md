@@ -53,7 +53,9 @@
     - `RFI` to `func-id` (saved to `ret-func-id` on call frame)
     - `RIP` to 0 (saved to `ret-address` on call frame)
     - `RBP` to `RFT - arg_count + 1`
- - `native_call <native-func-id: imm>`: ??
+ - `native_call <native-func-id: imm>`: invokes the registered native function upon VM state:
+   - The native function must respect the "calling convention"... It must access by register base offset (`caller_RFT - arg_count + 1`).
+   - Native functions must call `Engine::handle_native_fn_return(<result-Value>)` on completion _only if_ anything is returned.
  - `ret <src: const / reg>`: places a return value at the `RBP` location, destroys the current register frame, and restores some special registers (`RFV`, `RES`) and caller state from the top call frame 
  - `halt <status-code: imm>`: stops program execution with the specified `status-code`
 

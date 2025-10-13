@@ -19,26 +19,28 @@ _Minuet_ is a small, Python & C inspired language for simple programs. Unlike sh
 
 <literal> = <boolean> | <integer> | <double> | <string>
 <primary> = <identifier> | <lambda> | "(" <compare> ")" | <literal>
-<lambda> = "[" <identifier> ("," <identifier>)* "]" "=>" <block>
+<lambda> = "[" <identifier> ("," <identifier>)* "]" "gets" "[" ( <identifier> ("," <identifier>)* )? "]" "=>" <block>
 <lhs> = <primary> ("." <call>)*
-<call> = <lhs> ( "(" <compare> ("," <compare>)* ")" )?
+<call> = <lhs> "(" ( "(" <compare> ("," <compare>)* ")" )? ")"
 <unary> = "-"? <call>
 <factor> = <unary> (("*" | "/" | "%") <unary>)*
 <term> = <factor> (("+" | "-") <factor>)*
 <equality> = <term> (("==" | "!=") <term>)*
 <compare> = <equality> (("<" | ">" | ">=" | "<=") <equality>)*
-<assign> = <lhs> (":=" <compare>)?
+<assign> = <unary> (":=" <compare>)?
 ```
 
 ### Grammar: Statements
 ```
 <import> = "import" <string>
-<program> = (<import> | <function>)* EOF
+<program> = (<import> | <function> | <native>)* EOF
 <function> = "fun" <identifier> ":" "[" <identifier> ("," <identifier>)* "]" "=>" <block>
-<block> = "{" (<definition> | <if> | <expr-stmt>)+ "}"
+<native> = "native" "fun" <identifier> ":" "[" <identifier> ("," <identifier>)* "]"
+<block> = "{" (<definition> | <if> | <return> | <for-count-loop> | <expr-stmt>)+ "}"
 <definition> = "def" <identifier> ":=" <compare> <terminator>
 <if> = "if" <compare> <block> ("else" <block>)?
 <return> = "return" <compare>
+<for-count-loop> = "count" <identifier> ":" <integer> "->" <integer> "do" <block>
 <expr-stmt> = <expr> <terminator>
 
 ; todo
@@ -48,6 +50,7 @@ _Minuet_ is a small, Python & C inspired language for simple programs. Unlike sh
 ```
 
 ### Roadmap
- - Test simple import support.
  - Add native functions.
+ - Test simple import support.
+ - Add _for-count-loop_ support.
  - Add a simple bytecode optimization pass.

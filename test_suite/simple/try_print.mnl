@@ -1,0 +1,9 @@
+# native print numbers #
+
+native fun print: [arg]
+
+fun main: [] => {
+    print(42)
+
+    return 0
+}
