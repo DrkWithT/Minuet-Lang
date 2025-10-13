@@ -17,10 +17,11 @@ namespace Minuet::Syntax::Stmts {
     struct Return;
     struct Block;
     struct Function;
+    struct NativeStub;
     struct Import;
 
     // using StmtPtr = std::unique_ptr<StmtNode<ExprStmt, LocalDef, Match, MatchCase, Block, Function>>;
-    using StmtPtr = std::unique_ptr<StmtNode<ExprStmt, LocalDef, If, Return, Block, Function, Import>>;
+    using StmtPtr = std::unique_ptr<StmtNode<ExprStmt, LocalDef, If, Return, Block, Function, NativeStub, Import>>;
 
     struct ExprStmt {
         Exprs::ExprPtr expr;
@@ -60,6 +61,11 @@ namespace Minuet::Syntax::Stmts {
         StmtPtr body;
     };
 
+    struct NativeStub {
+        std::vector<Frontend::Lexicals::Token> params;
+        Frontend::Lexicals::Token name;
+    };
+
     struct Import {
         Frontend::Lexicals::Token target;
     };
@@ -72,7 +78,7 @@ namespace Minuet::Syntax::Stmts {
     };
 
     // using Stmt = StmtNode<ExprStmt, LocalDef, If, Match, MatchCase, Block, Function>;
-    using Stmt = StmtNode<ExprStmt, LocalDef, If, Return, Block, Function, Import>;
+    using Stmt = StmtNode<ExprStmt, LocalDef, If, Return, Block, Function, NativeStub, Import>;
 }
 
 #endif

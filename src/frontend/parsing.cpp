@@ -393,7 +393,7 @@ namespace Minuet::Frontend::Parsing {
 
     auto Parser::parse_assign(Lexing::Lexer& lexer, std::string_view src) -> ExprPtr {
         const auto expr_begin = m_current.start;
-        auto lhs_expr = parse_lhs(lexer, src);
+        auto lhs_expr = parse_unary(lexer, src);
 
         if (!match(m_current, TokenType::oper_assign)) {
             return lhs_expr;
@@ -591,6 +591,49 @@ namespace Minuet::Frontend::Parsing {
         });
     }
 
+    auto Parser::parse_native_stub(Lexing::Lexer& lexer, std::string_view src) -> Syntax::Stmts::StmtPtr {
+        const auto stub_src_begin = m_current.start;
+
+        consume(lexer, src, TokenType::keyword_native);
+        consume(lexer, src, TokenType::keyword_fun);
+
+        auto name_token = m_current;
+
+        consume(lexer, src, TokenType::identifier);
+        consume(lexer, src, TokenType::colon);
+        consume(lexer, src, TokenType::open_bracket);
+
+        std::vector<Token> params;
+
+        if (!match(m_current, TokenType::close_bracket)) {
+            consume(lexer, src, TokenType::identifier);
+            params.emplace_back(m_previous);
+        }
+
+        while (!match(m_current, TokenType::eof)) {
+            if (!match(m_current, TokenType::comma)) {
+                break;
+            }
+
+            consume(lexer, src);
+            consume(lexer, src, TokenType::identifier);
+
+            params.emplace_back(m_previous);
+        }
+
+        consume(lexer, src, TokenType::close_bracket);
+        const auto stub_src_end = m_current.start;
+
+        return std::make_unique<Stmt>(Stmt {
+            .data = Syntax::Stmts::NativeStub {
+                .params = std::move(params),
+                .name = name_token,
+            },
+            .src_begin = stub_src_begin,
+            .src_end = stub_src_end,
+        });
+    }
+
     auto Parser::parse_import(Lexing::Lexer& lexer, std::string_view src, std::stack<Driver::Utils::PendingSource>& pending_srcs, uint32_t& src_counter) -> Syntax::Stmts::StmtPtr {
         consume(lexer, src, TokenType::keyword_import);
         consume(lexer, src, TokenType::literal_string);
@@ -621,8 +664,16 @@ namespace Minuet::Frontend::Parsing {
             try {
                 if (match(m_current, TokenType::keyword_import)) {
                     decls.emplace_back(parse_import(lexer, src, pending_srcs, src_counter));
-                } else {
+                } else if (match(m_current, TokenType::keyword_native)) {
+                    decls.emplace_back(parse_native_stub(lexer, src));
+                } else if (match(m_current, TokenType::keyword_fun)) {
                     decls.emplace_back(parse_function(lexer, src));
+                } else {
+                    const auto culprit_ln = m_current.line;
+                    const auto culprit_col = m_current.col;
+                    std::string_view culprit_txt = src.substr(m_current.start, token_length(m_current));
+
+                    throw std::runtime_error {std::format("\033[1;31mParse Error\033[0m at \033[1;33msource[{}:{}]\033[0m:\n\nCulprit: '{}'\nNote: {}\n", culprit_ln, culprit_col, culprit_txt, "Invalid token starting a top-level statement.")};
                 }
             } catch (const std::runtime_error& parse_err) {
                 std::println(std::cerr, "{}: {}", m_error_count, parse_err.what());

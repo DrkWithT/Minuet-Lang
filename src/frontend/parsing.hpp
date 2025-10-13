@@ -62,6 +62,7 @@ namespace Minuet::Frontend::Parsing {
         [[nodiscard]] auto parse_return(Lexing::Lexer& lexer, std::string_view src) -> Syntax::Stmts::StmtPtr;
         [[nodiscard]] auto parse_block(Lexing::Lexer& lexer, std::string_view src) -> Syntax::Stmts::StmtPtr;
         [[nodiscard]] auto parse_function(Lexing::Lexer& lexer, std::string_view src) -> Syntax::Stmts::StmtPtr;
+        [[nodiscard]] auto parse_native_stub(Lexing::Lexer& lexer, std::string_view source) -> Syntax::Stmts::StmtPtr;
         [[nodiscard]] auto parse_import(Lexing::Lexer& lexer, std::string_view src, std::stack<Driver::Utils::PendingSource>& pending_srcs, uint32_t& src_counter) -> Syntax::Stmts::StmtPtr;
         [[nodiscard]] auto parse_program(Lexing::Lexer& lexer, std::string_view src, std::stack<Driver::Utils::PendingSource>& pending_srcs, uint32_t& src_counter) -> std::optional<Syntax::AST::UnitAST>;
 
