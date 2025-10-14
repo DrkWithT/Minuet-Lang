@@ -30,6 +30,7 @@ namespace Minuet::IR::Convert {
     }
 
 
+    /// TODO: implement `emit_while()` method for generating CFG IR for while loops... there should be a jump_else to exit the loop & a jump back to the "check".
     class ASTConversion {
     public:
         ASTConversion(const Runtime::NativeProcRegistry* native_proc_ids);
@@ -60,6 +61,7 @@ namespace Minuet::IR::Convert {
         [[nodiscard]] auto emit_def(const Syntax::Stmts::LocalDef& def, std::string_view source) -> bool;
         [[nodiscard]] auto emit_if(const Syntax::Stmts::If& cond, std::string_view source) -> bool;
         [[nodiscard]] auto emit_return(const Syntax::Stmts::Return& ret, std::string_view source) -> bool;
+        [[nodiscard]] auto emit_while(const Syntax::Stmts::While& wloop, std::string_view source) -> bool;
         [[nodiscard]] auto emit_block(const Syntax::Stmts::Block& block, std::string_view source) -> bool;
         [[nodiscard]] auto emit_function(const Syntax::Stmts::Function& fun, std::string_view source) -> bool;
         [[nodiscard]] auto emit_stmt(const Syntax::Stmts::StmtPtr& stmt, std::string_view source) -> bool;

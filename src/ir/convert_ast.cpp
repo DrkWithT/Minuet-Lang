@@ -536,6 +536,107 @@ namespace Minuet::IR::Convert {
         return true;
     }
 
+    [[nodiscard]] auto ASTConversion::emit_while(const Syntax::Stmts::While& wloop, std::string_view source) -> bool {
+        // Usual IR: (A jump_else follows the check operations to break out.)
+        //     (Check-Block)-F-*
+        //       |       |     |
+        //       T       L     |
+        //       |       ^     |
+        //       (In-Loop)     |
+        //                     |
+        //          (Post-Block)
+
+        // 1. Generate the check at the current block before the loop's body block... This will be repeated whenever control passes back here, matching what a while loop does.
+        const auto pre_loop_bb_id = m_result_cfgs.back().bb_count() - 1;
+        const auto in_loop_bb_id = pre_loop_bb_id + 1;
+
+        m_result_cfgs.back().get_newest_bb().value()->steps.emplace_back(
+            OperNonary {
+                .op = Op::nop,
+            }
+        );
+
+        m_result_cfgs.back().get_newest_bb().value()->steps.emplace_back(
+            OperNonary {
+                .op = Op::meta_save_patch_back,
+            }
+        );
+
+        if (auto check_result_aa = emit_expr(wloop.check, source); !check_result_aa) {
+            return false;
+        }
+
+        m_result_cfgs.back().get_newest_bb().value()->steps.emplace_back(
+            OperUnary {
+                .arg_0 = AbsAddress {
+                    .id = 0,
+                    .tag = AbsAddrTag::immediate,
+                },
+                .op = Op::jump_else,
+            }
+        );
+        m_result_cfgs.back().get_newest_bb().value()->steps.emplace_back(
+            OperNonary {
+                .op = Op::meta_save_patch,
+            }
+        );
+
+        /// NOTE: This code will help "reschedule" the jump_else patch to occur after the jump patch which returns to just before the loop check. The current patch is swapped down against the previous one.
+        m_result_cfgs.back().get_newest_bb().value()->steps.emplace_back(
+            OperNonary {
+                .op = Op::meta_shuffle_patch,
+            }
+        );
+
+        m_pending_links.emplace(Utils::BBLink {
+            .from = pre_loop_bb_id,
+            .to = in_loop_bb_id,
+        });
+
+        // 2. Emit the body block with an ending jump back to the check's beginning so that the control flow actually repeats...
+        if (!emit_stmt(wloop.body, source)) {
+            return false;
+        }
+
+        m_result_cfgs.back().get_newest_bb().value()->steps.emplace_back(
+            OperUnary {
+                .arg_0 = {
+                    .id = 0,
+                    .tag = AbsAddrTag::immediate,
+                },
+                .op = Op::jump,
+            }
+        );
+        m_result_cfgs.back().get_newest_bb().value()->steps.emplace_back(
+            OperNonary {
+                .op = Op::meta_patch_jmp,
+            }
+        );
+        m_pending_links.emplace(Utils::BBLink {
+            .from = in_loop_bb_id,
+            .to = pre_loop_bb_id,
+        });
+
+        const auto post_loop_bb_id = m_result_cfgs.back().add_bb();
+
+        m_result_cfgs.back().get_newest_bb().value()->steps.emplace_back(
+            OperNonary {
+                .op = Op::nop,
+            }
+        );
+        m_result_cfgs.back().get_newest_bb().value()->steps.emplace_back(
+            OperNonary {
+                .op = Op::meta_patch_jmp_else,
+            }
+        );
+        m_pending_links.emplace(Utils::BBLink {
+            .from = pre_loop_bb_id,
+            .to = post_loop_bb_id,
+        });
+
+        return true;
+    }
+
     auto ASTConversion::emit_block(const Syntax::Stmts::Block& block, std::string_view source) -> bool {
         m_result_cfgs.back().add_bb();
 
@@ -608,6 +709,8 @@ namespace Minuet::IR::Convert {
             return emit_block(*block_p, source);
         } else if (auto ret_p = std::get_if<Return>(&stmt->data); ret_p) {
             return emit_return(*ret_p, source);
+        } else if (auto wloop_p = std::get_if<While>(&stmt->data); wloop_p) {
+            return emit_while(*wloop_p, source);
         } else if (auto if_p = std::get_if<If>(&stmt->data); if_p) {
             return emit_if(*if_p, source);
         } else if (auto def_p = std::get_if<LocalDef>(&stmt->data); def_p) {

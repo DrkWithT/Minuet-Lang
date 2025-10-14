@@ -27,6 +27,8 @@ namespace Minuet::IR::Steps {
         "ret",
         "halt",
         "#save_patch",
+        "#save_patch_back",
+        "#shuffle_patch",
         "#patch_jmp_else",
         "#patch_jmp",
     };

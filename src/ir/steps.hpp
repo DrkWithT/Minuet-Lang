@@ -30,6 +30,8 @@ namespace Minuet::IR::Steps {
         ret,
         halt,
         meta_save_patch,
+        meta_save_patch_back,
+        meta_shuffle_patch,
         meta_patch_jmp_else,
         meta_patch_jmp,
         last,
