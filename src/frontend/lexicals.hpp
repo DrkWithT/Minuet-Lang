@@ -19,6 +19,7 @@ namespace Minuet::Frontend::Lexicals {
         keyword_pat,
         keyword_discard,
         keyword_return,
+        keyword_while,
         identifier,
         literal_false,
         literal_true,

@@ -503,6 +503,24 @@ namespace Minuet::Frontend::Parsing {
         });
     }
 
+    [[nodiscard]] auto Parser::parse_while(Lexing::Lexer& lexer, std::string_view src) -> Syntax::Stmts::StmtPtr {
+        const auto stmt_begin = m_current.start;
+        consume(lexer, src, TokenType::keyword_while);
+
+        auto check_expr = parse_compare(lexer, src);
+        auto body_block = parse_block(lexer, src);
+        const auto stmt_end = m_current.start;
+
+        return std::make_unique<Stmt>(Stmt {
+            .data = Syntax::Stmts::While {
+                .check = std::move(check_expr),
+                .body = std::move(body_block),
+            },
+            .src_begin = stmt_begin,
+            .src_end = stmt_end,
+        });
+    }
+
     // auto Parser::parse_match_case(Lexing::Lexer& lexer, std::string_view src) -> Syntax::Stmts::StmtPtr;
     // auto Parser::parse_match(Lexing::Lexer& lexer, std::string_view src) -> Syntax::Stmts::StmtPtr;
 
@@ -527,6 +545,8 @@ namespace Minuet::Frontend::Parsing {
                     return parse_if(lexer, src);
                 case TokenType::keyword_return:
                     return parse_return(lexer, src);
+                case TokenType::keyword_while:
+                    return parse_while(lexer, src);
                 default:
                     return parse_expr_stmt(lexer, src);
                 }

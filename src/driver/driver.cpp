@@ -42,6 +42,7 @@ namespace Minuet::Driver {
         m_lexer.add_lexical_item({.text = "pat", .tag = TokenType::keyword_pat});
         m_lexer.add_lexical_item({.text = "_", .tag = TokenType::keyword_discard});
         m_lexer.add_lexical_item({.text = "return", .tag = TokenType::keyword_return});
+        m_lexer.add_lexical_item({.text = "while", .tag = TokenType::keyword_while});
         m_lexer.add_lexical_item({.text = "*", .tag = TokenType::oper_times});
         m_lexer.add_lexical_item({.text = "/", .tag = TokenType::oper_slash});
         m_lexer.add_lexical_item({.text = "%", .tag = TokenType::oper_modulo});
