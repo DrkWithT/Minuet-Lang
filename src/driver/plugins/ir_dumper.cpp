@@ -26,6 +26,10 @@ namespace Minuet::Driver::Plugins {
         m_disabled = b;
     }
 
+    auto IRDumper::is_disabled() const& noexcept -> bool {
+        return m_disabled;
+    }
+
     void IRDumper::operator()(std::any ir_ref_wrap) const {
         if (m_disabled || ir_ref_wrap.type() != typeid(IR::CFG::FullIR*)) {
             return;

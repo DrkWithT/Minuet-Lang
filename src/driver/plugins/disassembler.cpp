@@ -10,6 +10,10 @@ namespace Minuet::Driver::Plugins {
         m_disabled = b;
     }
 
+    auto Disassembler::is_disabled() const& noexcept -> bool {
+        return m_disabled;
+    }
+
     void Disassembler::operator()(std::any bytecode_ref_wrap) const {
         if (m_disabled || bytecode_ref_wrap.type() != typeid(Runtime::Code::Program*)) {
             return;

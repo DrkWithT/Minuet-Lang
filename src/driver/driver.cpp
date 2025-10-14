@@ -174,6 +174,10 @@ namespace Minuet::Driver {
 
         m_disassembler->operator()(&program);
 
+        if (!m_ir_printer->is_disabled() && !m_disassembler->is_disabled()) {
+            return true;
+        }
+
         Runtime::VM::Engine vm {normal_vm_config, program, &m_native_procs};
 
         auto run_start = std::chrono::steady_clock::now();

@@ -29,8 +29,9 @@ namespace Minuet::Driver::Plugins {
     public:
         Disassembler() noexcept;
 
-        void set_disable_flag(bool b) noexcept;
-        void operator()(std::any bytecode_ref_wrap) const;
+        void set_disable_flag(bool b) noexcept override;
+        [[nodiscard]] auto is_disabled() const& noexcept -> bool override;
+        void operator()(std::any bytecode_ref_wrap) const override;
 
     private:
         void print_instruction(const Runtime::Code::Instruction& inst) const;

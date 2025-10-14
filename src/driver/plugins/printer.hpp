@@ -17,6 +17,7 @@ namespace Minuet::Driver::Plugins {
         virtual ~Printer() noexcept = default;
 
         virtual void set_disable_flag(bool b) noexcept = 0;
+        virtual auto is_disabled() const& noexcept -> bool = 0;
         virtual void operator()(std::any ir_ref_wrap) const = 0;
     };
 }

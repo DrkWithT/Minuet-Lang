@@ -13,6 +13,7 @@ namespace Minuet::Driver::Plugins {
         IRDumper() noexcept;
 
         void set_disable_flag(bool b) noexcept override;
+        [[nodiscard]] auto is_disabled() const& noexcept -> bool override;
         void operator()(std::any ir_ref_wrap) const override;
 
     private:
