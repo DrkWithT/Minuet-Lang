@@ -11,7 +11,7 @@ namespace Minuet::Codegen {
     namespace Utils {
         struct Patch {
             std::size_t instruction_pos;
-            int16_t target_ip;
+            std::size_t target_ip;
             bool cf_forward;
         };
 

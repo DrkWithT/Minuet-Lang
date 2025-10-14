@@ -185,9 +185,9 @@ namespace Minuet::Codegen {
 
             return true;
         } else if (op == Op::meta_save_patch) {
-            /// NOTE: Add support for backwards JUMP patching later for constructs, including while loops- Add JUMP_IF patching support too?
+            /// NOTE: Patches a jumping instruction forwards.
             const auto patchable_ip = m_result_chunks.back().size() - 1;
-            
+
             m_patches.emplace_back(Utils::Patch {
                 .instruction_pos = patchable_ip,
                 .target_ip = 0,
@@ -195,21 +195,54 @@ namespace Minuet::Codegen {
             });
 
             return true;
+        } else if (op == Op::meta_save_patch_back) {
+            /// NOTE: patches for a future jump instruction that returns to this one.
+            const auto patching_ip = m_result_chunks.back().size() - 1;
+
+            m_patches.emplace_back(Utils::Patch {
+                .instruction_pos = 0,
+                .target_ip = patching_ip,
+                .cf_forward = false,
+            });
+
+            return true;
+        } else if (op == Op::meta_shuffle_patch) {
+            auto top_patch = m_patches.back();
+            m_patches.pop_back();
+
+            auto prior_patch = m_patches.back();
+            m_patches.pop_back();
+
+            m_patches.emplace_back(top_patch);
+            m_patches.emplace_back(prior_patch);
+
+            return true;
         } else if (op == Op::meta_patch_jmp) {
             /// NOTE: Add support for backwards JUMP patching later for constructs, including while loops!
             const auto patched_jmp_ip = m_result_chunks.back().size() - 1;
-            const auto patch = m_patches.back();
 
+            const auto patch = m_patches.back();
             m_patches.pop_back();
-            m_result_chunks.back()[patch.instruction_pos].args[0] = patched_jmp_ip;
+
+            if (patch.cf_forward) {
+                m_result_chunks.back()[patch.instruction_pos].args[0] = patched_jmp_ip;   
+            } else {
+                m_result_chunks.back()[patched_jmp_ip].args[0] = patch.target_ip;
+            }
 
             return true;
         } else if (op == Op::meta_patch_jmp_else) {
             const auto patched_jmp_else_ip = m_result_chunks.back().size() - 1;
-            const auto patch = m_patches.back();
 
+            const auto patch = m_patches.back();
             m_patches.pop_back();
-            m_result_chunks.back()[patch.instruction_pos].args[0] = patched_jmp_else_ip;
+
+            if (patch.cf_forward) {
+                m_result_chunks.back()[patch.instruction_pos].args[0] = patched_jmp_else_ip;
+            } else {
+                /// NOTE: No support for backwards jump_else is currently planned.
+                return false;
+            }
 
             return true;
         }
