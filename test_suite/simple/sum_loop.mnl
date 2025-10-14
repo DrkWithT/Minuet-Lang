@@ -1,0 +1,25 @@
+# sum from 1 to N by loop #
+
+fun sumLoop: [n] => {
+    def count = n
+    def ans = 0
+
+    while count > 0 {
+        ans = ans + count
+        count = count - 1
+    }
+
+    return ans
+}
+
+fun main: [] => {
+    def ans = sumLoop(10)
+
+    if ans != 55 {
+        return 1
+    }
+
+    print(ans)
+
+    return 0
+}
