@@ -27,7 +27,7 @@ _Minuet_ is a small, Python & C inspired language for simple programs. Unlike sh
 <term> = <factor> (("+" | "-") <factor>)*
 <equality> = <term> (("==" | "!=") <term>)*
 <compare> = <equality> (("<" | ">" | ">=" | "<=") <equality>)*
-<assign> = <unary> (":=" <compare>)?
+<assign> = <unary> ("=" <compare>)?
 ```
 
 ### Grammar: Statements
@@ -37,7 +37,7 @@ _Minuet_ is a small, Python & C inspired language for simple programs. Unlike sh
 <function> = "fun" <identifier> ":" "[" <identifier> ("," <identifier>)* "]" "=>" <block>
 <native> = "native" "fun" <identifier> ":" "[" <identifier> ("," <identifier>)* "]"
 <block> = "{" (<definition> | <if> | <return> | <while> | <for-count-loop> | <expr-stmt>)+ "}"
-<definition> = "def" <identifier> ":=" <compare> <terminator>
+<definition> = "def" <identifier> "=" <compare> <terminator>
 <if> = "if" <compare> <block> ("else" <block>)?
 <return> = "return" <compare>
 <while> = "while" <compare> <block>
