@@ -17,12 +17,13 @@ namespace Minuet::Syntax::Stmts {
     // struct MatchCase;
     struct Return;
     struct While;
+    struct Break;
     struct Block;
     struct Function;
     struct NativeStub;
     struct Import;
 
-    using StmtPtr = std::unique_ptr<StmtNode<ExprStmt, LocalDef, If, Return, While, Block, Function, NativeStub, Import>>;
+    using StmtPtr = std::unique_ptr<StmtNode<ExprStmt, LocalDef, If, Return, While, Break, Block, Function, NativeStub, Import>>;
 }
 
 namespace Minuet::Syntax::Exprs {

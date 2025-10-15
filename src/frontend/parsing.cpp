@@ -521,6 +521,12 @@ namespace Minuet::Frontend::Parsing {
         });
     }
 
+    auto Parser::parse_break(Lexing::Lexer& lexer, std::string_view src) -> Syntax::Stmts::StmtPtr {
+        consume(lexer, src, TokenType::keyword_break);
+
+        return std::make_unique<Stmt>(Syntax::Stmts::Break {});
+    }
+
     // auto Parser::parse_match_case(Lexing::Lexer& lexer, std::string_view src) -> Syntax::Stmts::StmtPtr;
     // auto Parser::parse_match(Lexing::Lexer& lexer, std::string_view src) -> Syntax::Stmts::StmtPtr;
 
@@ -547,6 +553,8 @@ namespace Minuet::Frontend::Parsing {
                     return parse_return(lexer, src);
                 case TokenType::keyword_while:
                     return parse_while(lexer, src);
+                case TokenType::keyword_break:
+                    return parse_break(lexer, src);
                 default:
                     return parse_expr_stmt(lexer, src);
                 }
