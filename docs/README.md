@@ -41,7 +41,7 @@ _Minuet_ is a small, Python & C inspired language for simple programs. Unlike sh
 <if> = "if" <compare> <block> ("else" <block>)?
 <return> = "return" <compare>
 <while> = "while" <compare> <block>
-<for-count-loop> = "count" <identifier> ":" <integer> "->" <integer> "do" <block>
+<break> = "break"
 <expr-stmt> = <expr> <terminator>
 
 ; todo
@@ -51,7 +51,6 @@ _Minuet_ is a small, Python & C inspired language for simple programs. Unlike sh
 ```
 
 ### Roadmap
- - `0.4.0`: Add _for-count_ loop support.
  - `0.4.1`: Add simple bytecode optimization passes, following dependency injection.
    - Unused variable elimination
    - Reduction of useless `mov` and `nop` instructions

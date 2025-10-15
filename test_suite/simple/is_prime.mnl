@@ -15,9 +15,9 @@ fun isPrime: [n] => {
 }
 
 fun main: [] => {
-    if isPrime(9) == true {
-        return 1
+    if isPrime(4) == false {
+        return 0
     }
 
-    return 0
+    return 1
 }
