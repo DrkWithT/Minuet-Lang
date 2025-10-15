@@ -15,6 +15,12 @@ namespace Minuet::Codegen {
             bool cf_forward;
         };
 
+        struct ActiveLoop {
+            std::vector<std::size_t> brk_ips;
+            std::size_t start_ip;
+            std::size_t exit_ip;
+        };
+
         struct PseudoArg {
             int16_t value;
             Runtime::Code::ArgMode tag;
@@ -75,6 +81,7 @@ namespace Minuet::Codegen {
 
         std::vector<Runtime::Code::Chunk> m_result_chunks;
         std::vector<Utils::Patch> m_patches;
+        std::vector<Utils::ActiveLoop> m_active_loops;
         int16_t m_next_fun_id;
     };
 }

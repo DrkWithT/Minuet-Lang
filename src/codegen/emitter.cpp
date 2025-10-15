@@ -22,7 +22,7 @@ namespace Minuet::Codegen {
     using Runtime::Code::Program;
 
     Emitter::Emitter()
-    : m_result_chunks {}, m_patches {}, m_next_fun_id {0} {}
+    : m_result_chunks {}, m_patches {}, m_active_loops {}, m_next_fun_id {0} {}
 
     auto Emitter::operator()(FullIR& ir) -> std::optional<Program> {
         auto& [ir_cfgs, ir_constants, ir_main_fn_id] = ir;
@@ -182,8 +182,31 @@ namespace Minuet::Codegen {
                 .metadata = Utils::encode_metadata(),
                 .op = Opcode::nop,
             });
+        } else if (op == Op::meta_begin_while) {
+            const auto starting_nop_ip = m_result_chunks.back().size();
 
-            return true;
+            m_active_loops.emplace_back(Utils::ActiveLoop {
+                .brk_ips = {},
+                .start_ip = starting_nop_ip,
+                .exit_ip = 0,
+            });
+        } else if (op == Op::meta_end_while) {
+            const auto ending_nop_ip = m_result_chunks.back().size() - 1;
+
+            m_active_loops.back().exit_ip = ending_nop_ip;
+
+            for (
+                const auto& [break_ips, _, loop_end] = m_active_loops.back();
+                const auto& brk_jump_ip : break_ips
+            ) {
+                m_result_chunks.back()[brk_jump_ip].args[0] = loop_end;
+            }
+
+            m_active_loops.pop_back(); // NOTE: the most recent active loop ref dangles, but it's OK because its usage has certainly finished here.
+        } else if (op == Op::meta_mark_break) {
+            const auto brk_jump_ip = m_result_chunks.back().size() - 1;
+
+            m_active_loops.back().brk_ips.push_back(brk_jump_ip);
         } else if (op == Op::meta_save_patch) {
             /// NOTE: Patches a jumping instruction forwards.
             const auto patchable_ip = m_result_chunks.back().size() - 1;
@@ -193,8 +216,6 @@ namespace Minuet::Codegen {
                 .target_ip = 0,
                 .cf_forward = true,
             });
-
-            return true;
         } else if (op == Op::meta_save_patch_back) {
             /// NOTE: patches for a future jump instruction that returns to this one.
             const auto patching_ip = m_result_chunks.back().size() - 1;
@@ -204,8 +225,6 @@ namespace Minuet::Codegen {
                 .target_ip = patching_ip,
                 .cf_forward = false,
             });
-
-            return true;
         } else if (op == Op::meta_shuffle_patch) {
             auto top_patch = m_patches.back();
             m_patches.pop_back();
@@ -215,8 +234,6 @@ namespace Minuet::Codegen {
 
             m_patches.emplace_back(top_patch);
             m_patches.emplace_back(prior_patch);
-
-            return true;
         } else if (op == Op::meta_patch_jmp) {
             /// NOTE: Add support for backwards JUMP patching later for constructs, including while loops!
             const auto patched_jmp_ip = m_result_chunks.back().size() - 1;
@@ -229,8 +246,6 @@ namespace Minuet::Codegen {
             } else {
                 m_result_chunks.back()[patched_jmp_ip].args[0] = patch.target_ip;
             }
-
-            return true;
         } else if (op == Op::meta_patch_jmp_else) {
             const auto patched_jmp_else_ip = m_result_chunks.back().size() - 1;
 
@@ -243,11 +258,11 @@ namespace Minuet::Codegen {
                 /// NOTE: No support for backwards jump_else is currently planned.
                 return false;
             }
-
-            return true;
+        } else {
+            return false;
         }
 
-        return false;
+        return true;
     }
 
     auto Emitter::emit_oper_unary(const IR::Steps::OperUnary& oper_unary) -> bool {
