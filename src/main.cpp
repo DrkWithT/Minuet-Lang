@@ -7,7 +7,7 @@
 #include "driver/plugins/ir_dumper.hpp"
 
 constexpr auto minuet_version_major = 0;
-constexpr auto minuet_version_minor = 2;
+constexpr auto minuet_version_minor = 3;
 constexpr auto minuet_version_patch = 0;
 
 

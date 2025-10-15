@@ -20,6 +20,7 @@ namespace Minuet::Frontend::Lexicals {
         keyword_discard,
         keyword_return,
         keyword_while,
+        keyword_break,
         identifier,
         literal_false,
         literal_true,

@@ -16,13 +16,14 @@ namespace Minuet::Syntax::Stmts {
     // struct MatchCase;
     struct Return;
     struct While;
+    struct Break;
     struct Block;
     struct Function;
     struct NativeStub;
     struct Import;
 
     // using StmtPtr = std::unique_ptr<StmtNode<ExprStmt, LocalDef, Match, MatchCase, Block, Function>>;
-    using StmtPtr = std::unique_ptr<StmtNode<ExprStmt, LocalDef, If, Return, While, Block, Function, NativeStub, Import>>;
+    using StmtPtr = std::unique_ptr<StmtNode<ExprStmt, LocalDef, If, Return, While, Break, Block, Function, NativeStub, Import>>;
 
     struct ExprStmt {
         Exprs::ExprPtr expr;
@@ -57,6 +58,8 @@ namespace Minuet::Syntax::Stmts {
         Stmts::StmtPtr body;
     };
 
+    struct Break {};
+
     struct Block {
         std::vector<StmtPtr> items;
     };
@@ -83,7 +86,7 @@ namespace Minuet::Syntax::Stmts {
         uint32_t src_end;
     };
 
-    using Stmt = StmtNode<ExprStmt, LocalDef, If, Return, While, Block, Function, NativeStub, Import>;
+    using Stmt = StmtNode<ExprStmt, LocalDef, If, Return, While, Break, Block, Function, NativeStub, Import>;
 }
 
 #endif

@@ -552,6 +552,11 @@ namespace Minuet::IR::Convert {
 
         m_result_cfgs.back().get_newest_bb().value()->steps.emplace_back(
             OperNonary {
+                .op = Op::meta_begin_while,
+            }
+        );
+        m_result_cfgs.back().get_newest_bb().value()->steps.emplace_back(
+            OperNonary {
                 .op = Op::nop,
             }
         );
@@ -633,6 +638,26 @@ namespace Minuet::IR::Convert {
             .from = pre_loop_bb_id,
             .to = post_loop_bb_id,
         });
+        m_result_cfgs.back().get_newest_bb().value()->steps.emplace_back(
+            OperNonary {
+                .op = Op::meta_end_while,
+            }
+        );
+
+        return true;
+    }
+
+    auto ASTConversion::emit_break([[maybe_unused]] const Syntax::Stmts::Break& loop_brk, [[maybe_unused]] std::string_view source) -> bool {
+        m_result_cfgs.back().get_newest_bb().value()->steps.emplace_back(OperUnary {
+            .arg_0 = {
+                .id = 0,
+                .tag = AbsAddrTag::immediate,
+            },
+            .op = Op::jump,
+        });
+        m_result_cfgs.back().get_newest_bb().value()->steps.emplace_back(OperNonary {
+            .op = Op::meta_mark_break,
+        });
 
         return true;
     }
@@ -711,6 +736,8 @@ namespace Minuet::IR::Convert {
             return emit_return(*ret_p, source);
         } else if (auto wloop_p = std::get_if<While>(&stmt->data); wloop_p) {
             return emit_while(*wloop_p, source);
+        } else if (auto loop_brk_p = std::get_if<Break>(&stmt->data); loop_brk_p) {
+            return emit_break(*loop_brk_p, source);
         } else if (auto if_p = std::get_if<If>(&stmt->data); if_p) {
             return emit_if(*if_p, source);
         } else if (auto def_p = std::get_if<LocalDef>(&stmt->data); def_p) {

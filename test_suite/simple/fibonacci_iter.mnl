@@ -1,0 +1,27 @@
+fun iter_fib: [n] => {
+    def iter = n
+    def temp = 0
+    def a = 0
+    def b = 1
+
+    while iter > 0 {
+        temp = a
+        a = b
+        b = temp + b
+        iter = iter - 1
+    }
+
+    return a
+}
+
+fun main: [] => {
+    def ans = iter_fib(40)
+
+    print(ans)
+
+    if ans != 102334155 {
+        return 1
+    }
+
+    return 0
+}

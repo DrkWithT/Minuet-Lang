@@ -257,6 +257,8 @@ namespace Minuet::Runtime {
         }
 
         switch (self_tag) {
+        case FVTag::boolean:
+            return m_data.scalar_v == arg.m_data.scalar_v;
         case FVTag::int32:
             return m_data.scalar_v == arg.m_data.scalar_v;
         case FVTag::flt64:
