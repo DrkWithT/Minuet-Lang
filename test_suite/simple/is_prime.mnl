@@ -1,0 +1,23 @@
+fun isPrime: [n] => {
+    def factor = n / 2
+    def ans = true
+
+    while factor > 1 {
+        if n % factor == 0 {
+            ans = false
+            break
+        }
+
+        factor = factor - 1
+    }
+
+    return ans
+}
+
+fun main: [] => {
+    if isPrime(9) == true {
+        return 1
+    }
+
+    return 0
+}

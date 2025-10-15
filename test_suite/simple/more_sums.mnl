@@ -1,0 +1,26 @@
+# sum multiples of 1 to N #
+
+fun sumMultiples: [n, low, high] => {
+    def curr_n = low
+    def curr_sum = 0
+
+    while curr_n <= high {
+        if curr_n % n == 0 {
+            curr_sum = curr_sum + curr_n
+        }
+
+        curr_n = curr_n + 1
+    }
+
+    return curr_sum
+}
+
+fun main: [] => {
+    def ans = sumMultiples(2, 1, 10)
+
+    if ans != 30 {
+        return 1
+    }
+
+    return 0
+}
