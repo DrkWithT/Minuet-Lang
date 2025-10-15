@@ -32,6 +32,8 @@ namespace Minuet::Driver {
 
     Driver::Driver()
     : m_lexer {}, m_src_map {}, m_native_procs {}, m_native_proc_ids {}, m_ir_printer {}, m_disassembler {} {
+        m_lexer.add_lexical_item({.text = "true", .tag = TokenType::literal_true});
+        m_lexer.add_lexical_item({.text = "false", .tag = TokenType::literal_false});
         m_lexer.add_lexical_item({.text = "import", .tag = TokenType::keyword_import});
         m_lexer.add_lexical_item({.text = "fun", .tag = TokenType::keyword_fun});
         m_lexer.add_lexical_item({.text = "native", .tag = TokenType::keyword_native});
