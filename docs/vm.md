@@ -30,6 +30,11 @@
 
 ### Opcodes:
  - `nop`: does nothing except increment `RIP`
+ - `make_seq <dest-reg>`: creates an empty sequence on the heap and loads its reference in a register
+ - `seq_obj_push <dest-obj-reg> <src-value-reg> <mode>`: appends to the front or back of a sequence (modes 0 or 1) if size mutable
+ - `seq_obj_pop <dest-value-reg> <src-obj-reg> <mode>`: removes an item from the front or back of a sequence (modes 0 or 1) if size mutable
+ - `seq_obj_get <dest-value-reg> <src-obj-reg> <index>`: retrieves the item from a sequence at a given index
+ - `frz_seq_obj <dest-obj-reg>`: makes the sequence fixed size (only after tuple initialization)
  - `load_const <dest-reg> <imm>`: places a constant by index into a register
  - `mov <dest-reg> <src: const / reg>`: places a copied source value (constant or register) to a destination register
  - `neg <dest-reg>`: negates a register value in-place

@@ -5,7 +5,8 @@
 <comment> = "#" <NON-HASH-SIGN>* "#"
 <spaces> = SP | TAB | CR | LF
 
-<literal> = <boolean> | <integer> | <double> | <string> | <list>
+<literal> = <boolean> | <integer> | <double> | <string> | <tuple> | <list>
+<tuple> = "(" ( <primary> ("," <primary>)* )? ")"
 <list> = "[" ( <primary> ("," <primary>)* )? "]"
 <primary> = <identifier> | <lambda> | "(" <compare> ")" | <literal>
 <lambda> = "[" <identifier> ("," <identifier>)* "]" "gets" "[" ( <identifier> ("," <identifier>)* )? "]" "=>" <block>
@@ -36,9 +37,6 @@
 
 ### Unused
 ```
-; exprs
-<tuple> = "(" ( <primary> ("," <primary>)* )? ")"
-
 ; stmts
 <match> = "match" <identifier> "{" <pattern>* <default> "}"
 <pattern> = "pat" <literal> "->" <compare> <terminator>
