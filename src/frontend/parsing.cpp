@@ -87,11 +87,48 @@ namespace Minuet::Frontend::Parsing {
                 .src_begin = literal_beg,
                 .src_end = literal_end,
             });
+        } else if (match(temp_token_copy, TokenType::open_paren)) {
+            return parse_sequence(lexer, src);
         }
 
         report_error(temp_token_copy, src, "Invalid literal.");
 
         return {};
+    }
+
+    auto Parser::parse_sequence(Lexing::Lexer& lexer, std::string_view src) -> Syntax::Exprs::ExprPtr {
+        consume(lexer, src, TokenType::open_paren, TokenType::open_bracket);
+
+        const auto is_tuple = m_previous.type == TokenType::open_paren;
+        const auto expected_end_tkn = ([](TokenType tag) noexcept {
+            switch (tag) {
+            case TokenType::open_paren: return TokenType::close_paren;
+            case TokenType::open_bracket: default: return TokenType::close_bracket;
+            }
+        })(m_previous.type);
+
+        std::vector<ExprPtr> items;
+
+        if (!match(m_current, expected_end_tkn)) {
+            items.emplace_back(parse_primary(lexer, src));
+        }
+
+        while (!match(m_current, TokenType::eof)) {
+            if (!match(m_current, TokenType::comma)) {
+                break;
+            }
+
+            consume(lexer, src);
+
+            items.emplace_back(parse_primary(lexer, src));
+        }
+
+        consume(lexer, src, expected_end_tkn);
+
+        return std::make_unique<Expr>(Syntax::Exprs::Sequence {
+            .items = std::move(items),
+            .is_tuple = is_tuple,
+        });
     }
 
     auto Parser::parse_primary(Lexing::Lexer& lexer, std::string_view src) -> ExprPtr {
