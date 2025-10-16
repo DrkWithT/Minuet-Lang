@@ -2,6 +2,7 @@
 #include <print>
 #include <sstream>
 #include <fstream>
+#include "driver/sources.hpp"
 
 namespace Minuet::Driver::Sources {
     auto read_source(std::filesystem::path src_path) -> std::string {
