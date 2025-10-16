@@ -9,49 +9,20 @@ _Minuet_ is a small, Python & C inspired language for simple programs. Unlike sh
  - Imperative & functional
     - First class functions
     - Higher order functions & some closures?
+ - Built-in data structures
+    - Lists (a rope-like hybrid of `Value` vectors in nodes)
+    - Tuples
  - Built-in helper functions
  - Requires a `main` function
 
-### Grammar: Misc. & Expressions
-```
-<comment> = "#" <NON-HASH-SIGN>* "#"
-<spaces> = SP | TAB | CR | LF
-
-<literal> = <boolean> | <integer> | <double> | <string>
-<primary> = <identifier> | <lambda> | "(" <compare> ")" | <literal>
-<lambda> = "[" <identifier> ("," <identifier>)* "]" "gets" "[" ( <identifier> ("," <identifier>)* )? "]" "=>" <block>
-<lhs> = <primary> ("." <call>)*
-<call> = <lhs> "(" ( "(" <compare> ("," <compare>)* ")" )? ")"
-<unary> = "-"? <call>
-<factor> = <unary> (("*" | "/" | "%") <unary>)*
-<term> = <factor> (("+" | "-") <factor>)*
-<equality> = <term> (("==" | "!=") <term>)*
-<compare> = <equality> (("<" | ">" | ">=" | "<=") <equality>)*
-<assign> = <unary> ("=" <compare>)?
-```
-
-### Grammar: Statements
-```
-<import> = "import" <string>
-<program> = (<import> | <function> | <native>)* EOF
-<function> = "fun" <identifier> ":" "[" <identifier> ("," <identifier>)* "]" "=>" <block>
-<native> = "native" "fun" <identifier> ":" "[" <identifier> ("," <identifier>)* "]"
-<block> = "{" (<definition> | <if> | <return> | <while> | <for-count-loop> | <expr-stmt>)+ "}"
-<definition> = "def" <identifier> "=" <compare> <terminator>
-<if> = "if" <compare> <block> ("else" <block>)?
-<return> = "return" <compare>
-<while> = "while" <compare> <block>
-<break> = "break"
-<expr-stmt> = <expr> <terminator>
-
-; todo
-; <match> = "match" <identifier> "{" <pattern>* <default> "}"
-; <pattern> = "pat" <literal> "->" <compare> <terminator>
-; <default> = "_" "->" <compare> <terminator>
-```
+### Other Documentation
+ - [Grammar](/docs/grammar.md)
+ - [VM](/docs/vm.md)
 
 ### Roadmap
- - `0.4.1`: Add simple bytecode optimization passes, following dependency injection.
+ - `0.4.0`: Add tuple support (requires an object heap & hidden object references)
+ - `0.5.0`: Add basic list support
+ - `0.5.1`: Add simple bytecode optimization passes, following dependency injection.
    - Unused variable elimination
    - Reduction of useless `mov` and `nop` instructions
    - Dead branch elimination
