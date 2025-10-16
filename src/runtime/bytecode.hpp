@@ -11,6 +11,11 @@
 namespace Minuet::Runtime::Code {
     enum class Opcode : uint8_t {
         nop,
+        make_seq,
+        seq_obj_push,
+        seq_obj_pop,
+        seq_obj_get,
+        frz_seq_obj,
         load_const,
         mov,
         neg,

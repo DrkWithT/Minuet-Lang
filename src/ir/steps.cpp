@@ -5,6 +5,11 @@
 namespace Minuet::IR::Steps {
     static constexpr std::array<std::string_view, static_cast<std::size_t>(Op::last)> op_names = {
         "nop",
+        "make_seq",
+        "seq_obj_push",
+        "seq_obj_pop",
+        "seq_obj_get",
+        "frz_seq_obj",
         "neg",
         "inc",
         "dec",
