@@ -5,11 +5,18 @@
 #include <string>
 
 namespace Minuet::Runtime {
+    class HeapValueBase;
+
+    using HeapValuePtr = HeapValueBase*;
+};
+
+namespace Minuet::Runtime {
     enum class FVTag : uint8_t {
         dud,
         boolean,
         int32,
         flt64,
+        sequence,
     };
 
     class FastValue {
@@ -18,7 +25,7 @@ namespace Minuet::Runtime {
             uint8_t dud;
             int scalar_v;
             double dbl_v;
-            // std::size_t ref_v;
+            HeapValueBase* obj_p;
         } m_data;
         FVTag m_tag;
 
@@ -45,6 +52,11 @@ namespace Minuet::Runtime {
         constexpr FastValue(double d) noexcept
         : m_data {}, m_tag {FVTag::flt64} {
             m_data.dbl_v = d;
+        }
+
+        constexpr FastValue(HeapValuePtr obj_p) noexcept
+        : m_data {}, m_tag {FVTag::sequence} {
+            m_data.obj_p = obj_p;
         }
 
         [[nodiscard]] constexpr auto is_none() const& -> bool {
