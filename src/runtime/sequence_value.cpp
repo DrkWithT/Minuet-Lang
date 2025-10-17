@@ -13,14 +13,6 @@ namespace Minuet::Runtime {
         return m_length * cm_fast_val_memsize;
     }
 
-    [[nodiscard]] auto SequenceValue::get_ref_count() const& noexcept -> int {
-        return m_ptr_count;
-    }
-
-    void SequenceValue::dec_ref_count() & noexcept {
-        --m_ptr_count;
-    }
-
     auto SequenceValue::get_tag() const& noexcept -> ObjectTag {
         return ObjectTag::sequence;
     }
@@ -68,8 +60,6 @@ namespace Minuet::Runtime {
     }
 
     auto SequenceValue::as_fast_value() noexcept -> FastValue {
-        ++m_ptr_count;
-
         return {this};
     }
 

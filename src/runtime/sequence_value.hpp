@@ -19,7 +19,6 @@ namespace Minuet::Runtime {
 
         std::unordered_map<std::size_t, FastValue> m_items;
         std::size_t m_length;
-        std::size_t m_ptr_count;
         bool m_frozen;
 
     public:
@@ -27,8 +26,6 @@ namespace Minuet::Runtime {
         SequenceValue(FlexiblePolicy flex_opt);
 
         [[nodiscard]] auto get_memory_score() const& noexcept -> std::size_t override;
-        [[nodiscard]] auto get_ref_count() const& noexcept -> int override;
-        void dec_ref_count() & noexcept override;
         [[nodiscard]] auto get_tag() const& noexcept -> ObjectTag override;
 
         [[nodiscard]] auto push_value(FastValue arg) -> bool override;

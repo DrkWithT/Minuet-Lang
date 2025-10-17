@@ -19,11 +19,9 @@ namespace Minuet::Runtime {
 
     class HeapValueBase {
     public:
-        ~HeapValueBase() = default;
+        virtual ~HeapValueBase() = default;
 
         virtual auto get_memory_score() const& noexcept -> std::size_t = 0;
-        virtual auto get_ref_count() const& noexcept -> int = 0;
-        virtual void dec_ref_count() & noexcept = 0;
         virtual auto get_tag() const& noexcept -> ObjectTag = 0;
 
         virtual auto push_value(FastValue arg) -> bool = 0;
