@@ -21,15 +21,11 @@ namespace Minuet::Runtime {
         --m_ptr_count;
     }
 
-    [[nodiscard]] auto SequenceValue::is_primitive() const& noexcept -> bool {
-        return false;
+    auto SequenceValue::get_tag() const& noexcept -> ObjectTag {
+        return ObjectTag::sequence;
     }
 
-    [[nodiscard]] auto SequenceValue::is_sequence() const& noexcept -> bool {
-        return true;
-    }
-
-    [[nodiscard]] auto SequenceValue::push_value(FastValue arg) -> bool {
+    auto SequenceValue::push_value(FastValue arg) -> bool {
         const auto next_idx = m_items.size();
 
         m_items[next_idx] = std::move(arg);
@@ -38,7 +34,7 @@ namespace Minuet::Runtime {
         return true;
     }
 
-    [[nodiscard]] auto SequenceValue::pop_value() -> FastValue {
+    auto SequenceValue::pop_value() -> FastValue {
         if (m_items.empty() || m_frozen) {
             return {};
         }
@@ -57,13 +53,13 @@ namespace Minuet::Runtime {
         return {};
     }
 
-    [[nodiscard]] auto SequenceValue::set_value(FastValue arg, std::size_t pos) -> bool {
+    auto SequenceValue::set_value(FastValue arg, std::size_t pos) -> bool {
         m_items[pos] = std::move(arg);
 
         return true;
     }
 
-    [[nodiscard]] auto SequenceValue::get_value(std::size_t pos) -> std::optional<FastValue*> {
+    auto SequenceValue::get_value(std::size_t pos) -> std::optional<FastValue*> {
         if (m_items.contains(pos) || m_frozen) {
             return &m_items[pos];
         }
@@ -71,13 +67,13 @@ namespace Minuet::Runtime {
         return {};
     }
 
-    [[nodiscard]] auto SequenceValue::as_fast_value() noexcept -> FastValue {
+    auto SequenceValue::as_fast_value() noexcept -> FastValue {
         ++m_ptr_count;
 
         return {this};
     }
 
-    [[nodiscard]] auto SequenceValue::to_string() const& noexcept -> std::string {
+    auto SequenceValue::to_string() const& noexcept -> std::string {
         return "Sequence(...)\n\tNote: this is a dud, lacking support for item printing.";
     }
 }

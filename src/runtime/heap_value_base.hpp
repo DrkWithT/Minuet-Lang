@@ -12,6 +12,11 @@ namespace Minuet::Runtime {
         back,
     };
 
+    enum class ObjectTag : uint8_t {
+        dud,
+        sequence,
+    };
+
     class HeapValueBase {
     public:
         ~HeapValueBase() = default;
@@ -19,8 +24,7 @@ namespace Minuet::Runtime {
         virtual auto get_memory_score() const& noexcept -> std::size_t = 0;
         virtual auto get_ref_count() const& noexcept -> int = 0;
         virtual void dec_ref_count() & noexcept = 0;
-        virtual auto is_primitive() const& noexcept -> bool = 0;
-        virtual auto is_sequence() const& noexcept -> bool = 0;
+        virtual auto get_tag() const& noexcept -> ObjectTag = 0;
 
         virtual auto push_value(FastValue arg) -> bool = 0;
         virtual auto pop_value() -> FastValue = 0;

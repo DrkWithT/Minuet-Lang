@@ -29,8 +29,7 @@ namespace Minuet::Runtime {
         [[nodiscard]] auto get_memory_score() const& noexcept -> std::size_t override;
         [[nodiscard]] auto get_ref_count() const& noexcept -> int override;
         void dec_ref_count() & noexcept override;
-        [[nodiscard]] auto is_primitive() const& noexcept -> bool override;
-        [[nodiscard]] auto is_sequence() const& noexcept -> bool override;
+        [[nodiscard]] auto get_tag() const& noexcept -> ObjectTag override;
 
         [[nodiscard]] auto push_value(FastValue arg) -> bool override;
         [[nodiscard]] auto pop_value() -> FastValue override;
