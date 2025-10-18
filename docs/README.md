@@ -26,7 +26,8 @@ _Minuet_ is a small, Python & C inspired language for simple programs. Unlike sh
    - Fix nested loops!
  - `0.5.0`: Add basic list support & operators for sequence containers
    - Add `*++`, `*--`, `++*`, `--*` operators for push/pop operations at back/front
- - `0.5.1`: Add simple bytecode optimization passes, following dependency injection.
+ - `0.6.0`: Add lambda support.
+ - `0.6.1`: Add simple bytecode optimization passes, following dependency injection.
    - Unused variable elimination
    - Reduction of useless `mov` and `nop` instructions
    - Dead branch elimination
