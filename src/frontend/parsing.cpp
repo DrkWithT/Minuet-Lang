@@ -87,7 +87,7 @@ namespace Minuet::Frontend::Parsing {
                 .src_begin = literal_beg,
                 .src_end = literal_end,
             });
-        } else if (match(temp_token_copy, TokenType::open_paren)) {
+        } else if (match(temp_token_copy, TokenType::open_bracket, TokenType::open_brace)) {
             return parse_sequence(lexer, src);
         }
 
@@ -97,12 +97,12 @@ namespace Minuet::Frontend::Parsing {
     }
 
     auto Parser::parse_sequence(Lexing::Lexer& lexer, std::string_view src) -> Syntax::Exprs::ExprPtr {
-        consume(lexer, src, TokenType::open_paren, TokenType::open_bracket);
+        consume(lexer, src, TokenType::open_brace, TokenType::open_bracket);
 
-        const auto is_tuple = m_previous.type == TokenType::open_paren;
+        const auto is_tuple = m_previous.type == TokenType::open_bracket;
         const auto expected_end_tkn = ([](TokenType tag) noexcept {
             switch (tag) {
-            case TokenType::open_paren: return TokenType::close_paren;
+            case TokenType::open_brace: return TokenType::close_brace;
             case TokenType::open_bracket: default: return TokenType::close_bracket;
             }
         })(m_previous.type);
@@ -144,7 +144,7 @@ namespace Minuet::Frontend::Parsing {
                 .src_begin = m_current.start,
                 .src_end = m_current.end,
             });
-        } else if (match(temp_token_copy, TokenType::open_bracket)) {
+        } else if (match(temp_token_copy, TokenType::keyword_fn)) {
             return parse_lambda(lexer, src);
         } else if (match(temp_token_copy, TokenType::open_paren)) {
             consume(lexer, src);
@@ -161,6 +161,7 @@ namespace Minuet::Frontend::Parsing {
         std::vector<Token> params;
         const auto lambda_beg = m_current.start;
 
+        consume(lexer, src, TokenType::keyword_fn);
         consume(lexer, src, TokenType::open_bracket);
 
         if (!match(m_current, TokenType::close_bracket)) {
