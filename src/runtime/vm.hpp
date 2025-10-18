@@ -7,6 +7,7 @@
 #include <vector>
 
 #include "runtime/fast_value.hpp"
+#include "runtime/heap_storage.hpp"
 #include "runtime/bytecode.hpp"
 #include "runtime/natives.hpp"
 
@@ -51,8 +52,17 @@ namespace Minuet::Runtime::VM {
     private:
         [[nodiscard]] auto fetch_value(Code::ArgMode mode, int16_t id) noexcept -> std::optional<Runtime::FastValue>;
 
+        void try_mark_and_sweep();
+
+        void handle_make_seq(uint16_t metadata, int16_t dest) noexcept;
+        void handle_seq_obj_push(uint16_t metadata, int16_t dest, int16_t src_id, int16_t mode) noexcept;
+        void handle_seq_obj_pop(uint16_t metadata, int16_t dest, int16_t src_id, int16_t mode) noexcept;
+        void handle_seq_obj_get(uint16_t metadata, int16_t dest, int16_t src_id, int16_t pos_value_id) noexcept;
+        void handle_frz_seq_obj(uint16_t metadata, int16_t dest) noexcept;
+
         void handle_load_const(uint16_t metadata, int16_t dest, int16_t const_id) noexcept;
         void handle_mov(uint16_t metadata, int16_t dest, int16_t src) noexcept;
+
         void handle_neg(uint16_t metadata, int16_t dest) noexcept;
         void handle_inc(uint16_t metadata, int16_t dest) noexcept;
         void handle_dec(uint16_t metadata, int16_t dest) noexcept;
@@ -61,12 +71,14 @@ namespace Minuet::Runtime::VM {
         void handle_mod(uint16_t metadata, int16_t dest, int16_t lhs, int16_t rhs) noexcept;
         void handle_add(uint16_t metadata, int16_t dest, int16_t lhs, int16_t rhs) noexcept;
         void handle_sub(uint16_t metadata, int16_t dest, int16_t lhs, int16_t rhs);
+
         void handle_cmp_eq(uint16_t metadata, int16_t dest, int16_t lhs, int16_t rhs) noexcept;
         void handle_cmp_ne(uint16_t metadata, int16_t dest, int16_t lhs, int16_t rhs) noexcept;
         void handle_cmp_lt(uint16_t metadata, int16_t dest, int16_t lhs, int16_t rhs) noexcept;
         void handle_cmp_gt(uint16_t metadata, int16_t dest, int16_t lhs, int16_t rhs) noexcept;
         void handle_cmp_gte(uint16_t metadata, int16_t dest, int16_t lhs, int16_t rhs) noexcept;
         void handle_cmp_lte(uint16_t metadata, int16_t dest, int16_t lhs, int16_t rhs) noexcept;
+
         void handle_jmp(int16_t dest_ip) noexcept;
         void handle_jmp_if(int16_t dest_ip) noexcept;
         void handle_jmp_else(int16_t dest_ip) noexcept;
@@ -75,6 +87,7 @@ namespace Minuet::Runtime::VM {
         void handle_ret(uint16_t metadata, int16_t src_id) noexcept;
         // void handle_halt(int16_t metadata, int16_t src_id);
 
+        HeapStorage m_heap;
         std::vector<Runtime::FastValue> m_memory;
         std::vector<Utils::CallFrame> m_call_frames;
 
