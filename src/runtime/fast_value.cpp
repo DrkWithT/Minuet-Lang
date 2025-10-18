@@ -2,6 +2,20 @@
 #include "runtime/fast_value.hpp"
 
 namespace Minuet::Runtime {
+    auto FastValue::to_scalar() noexcept -> std::optional<int> {
+        if (m_tag == FVTag::int32) {
+            return m_data.scalar_v;
+        }
+
+        return {};
+    }
+
+    auto FastValue::to_object_ptr() noexcept -> HeapValuePtr {
+        return (m_tag == FVTag::sequence)
+            ? m_data.obj_p
+            : nullptr;
+    }
+
     auto FastValue::negate() & -> bool {
         switch (tag()) {
         case FVTag::boolean:

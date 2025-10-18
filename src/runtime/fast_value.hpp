@@ -2,6 +2,7 @@
 #define MINUET_FAST_VALUE_HPP
 
 #include <cstdint>
+#include <optional>
 #include <string>
 
 namespace Minuet::Runtime {
@@ -29,10 +30,6 @@ namespace Minuet::Runtime {
         } m_data;
         FVTag m_tag;
 
-        [[nodiscard]] constexpr auto tag() const& noexcept -> FVTag {
-            return m_tag;
-        }
-
     public:
         constexpr FastValue() noexcept
         : m_data {}, m_tag {FVTag::dud} {
@@ -58,6 +55,13 @@ namespace Minuet::Runtime {
         : m_data {}, m_tag {FVTag::sequence} {
             m_data.obj_p = obj_p;
         }
+
+        [[nodiscard]] constexpr auto tag() const& noexcept -> FVTag {
+            return m_tag;
+        }
+
+        [[nodiscard]] auto to_scalar() noexcept -> std::optional<int>;
+        [[nodiscard]] auto to_object_ptr() noexcept -> HeapValuePtr;
 
         [[nodiscard]] constexpr auto is_none() const& -> bool {
             return m_tag == FVTag::dud;
