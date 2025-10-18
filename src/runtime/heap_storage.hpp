@@ -5,7 +5,7 @@
 #include <queue>
 #include <vector>
 
-#include "runtime/heap_value_base.hpp"
+#include "runtime/fast_value.hpp"
 
 namespace Minuet::Runtime {
     class HeapStorage {

@@ -1,4 +1,5 @@
 #include <utility>
+#include <sstream>
 
 #include "runtime/sequence_value.hpp"
 
@@ -72,6 +73,24 @@ namespace Minuet::Runtime {
     }
 
     auto SequenceValue::to_string() const& noexcept -> std::string {
-        return "Sequence(...)";
+        struct Delims {
+            char d_open;
+            char d_close;
+        };
+
+        std::ostringstream sout;
+        const auto [delim_open, delim_close] = (m_frozen)
+            ? Delims { .d_open = '(', .d_close = ')' }
+            : Delims { .d_open = '[', .d_close = ']' };
+
+        sout << delim_open;
+
+        for (const auto& item_v : m_items) {
+            sout << item_v.to_string() << ' ';
+        }
+
+        sout << delim_close;
+
+        return sout.str();
     }
 }

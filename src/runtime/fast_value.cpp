@@ -369,7 +369,7 @@ namespace Minuet::Runtime {
         case FVTag::flt64:
             return std::format("{}", m_data.dbl_v);
         case FVTag::sequence:
-            return "[...]";
+            return m_data.obj_p->to_string();
         case FVTag::dud:
             return "(dud)";
         }

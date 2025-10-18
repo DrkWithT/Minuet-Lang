@@ -1,10 +1,11 @@
 #ifndef MINUET_RUNTIME_SEQUENCE_VALUE_HPP
 #define MINUET_RUNTIME_SEQUENCE_VALUE_HPP
 
+#include <optional>
+#include <string>
 #include <vector>
 
 #include "runtime/fast_value.hpp"
-#include "runtime/heap_value_base.hpp"
 
 namespace Minuet::Runtime {
     struct FlexiblePolicy {};
