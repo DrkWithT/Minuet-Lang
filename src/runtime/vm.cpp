@@ -5,7 +5,6 @@
 #include <set>
 
 #include "runtime/fast_value.hpp"
-#include "runtime/heap_value_base.hpp"
 #include "runtime/bytecode.hpp"
 #include "runtime/sequence_value.hpp"
 #include "runtime/vm.hpp"
