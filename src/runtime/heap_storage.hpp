@@ -14,6 +14,7 @@ namespace Minuet::Runtime {
         static constexpr auto cm_normal_max_overhead = 16384UL;
         static constexpr auto cm_normal_gc_threshold = 8192UL;
         static constexpr auto cm_normal_obj_overhead = 16UL;
+        static constexpr auto cm_normal_obj_capacity = cm_normal_max_overhead / cm_normal_obj_overhead;
 
         /// NOTE: tracks freed object slots in the VM "heap" remaining between live slots
         std::queue<std::size_t> m_hole_list;
@@ -25,6 +26,7 @@ namespace Minuet::Runtime {
         std::unique_ptr<HeapValueBase> m_dud;
 
         std::size_t m_overhead;
+        std::size_t m_next_id;
 
     public:
         /// NOTE: preload "heap literals" from IR & codegen stages here!

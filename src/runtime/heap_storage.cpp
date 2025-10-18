@@ -6,7 +6,10 @@
 
 namespace Minuet::Runtime {
     HeapStorage::HeapStorage()
-    : m_hole_list {}, m_objects {}, m_dud {}, m_overhead {0UL} {}
+    : m_hole_list {}, m_objects {}, m_dud {}, m_overhead {0UL}, m_next_id {0UL} {
+        m_objects.reserve(cm_normal_obj_capacity);
+        m_objects.resize(cm_normal_obj_capacity);
+    }
 
     auto HeapStorage::is_ripe() const& noexcept -> bool {
         return m_overhead >= cm_normal_gc_threshold;
@@ -24,11 +27,12 @@ namespace Minuet::Runtime {
                         return gap_id;
                     }
 
-                    return m_objects.size();
+                    return m_next_id;
                 })();
 
                 m_objects[next_object_id] = std::make_unique<SequenceValue>();
                 m_overhead += cm_normal_obj_overhead;
+                ++m_next_id;
 
                 return m_objects[next_object_id];
             }
@@ -41,6 +45,7 @@ namespace Minuet::Runtime {
         if (auto& object_cell = m_objects[id]; object_cell) {
             object_cell = {};
             m_overhead -= cm_normal_obj_overhead;
+            m_hole_list.emplace(id);
 
             return true;
         }

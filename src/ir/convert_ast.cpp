@@ -207,7 +207,7 @@ namespace Minuet::IR::Convert {
         }
 
         auto value_aa = temp_value_aa_opt.value();
-        const auto is_resizeable = sequence.is_tuple;
+        const auto is_fixed_size = sequence.is_tuple;
 
         m_result_cfgs.back().get_newest_bb().value()->steps.emplace_back(
             OperUnary {
@@ -236,7 +236,7 @@ namespace Minuet::IR::Convert {
             }
         }
 
-        if (!is_resizeable) {
+        if (is_fixed_size) {
             m_result_cfgs.back().get_newest_bb().value()->steps.emplace_back(
                 OperUnary {
                     .arg_0 = value_aa,

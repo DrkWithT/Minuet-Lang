@@ -5,9 +5,6 @@
 
 namespace Minuet::Runtime {
     SequenceValue::SequenceValue()
-    : m_items {}, m_length {0}, m_frozen {true} {}
-
-    SequenceValue::SequenceValue([[maybe_unused]] FlexiblePolicy flex_opt)
     : m_items {}, m_length {0}, m_frozen {false} {}
 
     auto SequenceValue::items() noexcept -> std::vector<FastValue>& {
@@ -80,8 +77,8 @@ namespace Minuet::Runtime {
 
         std::ostringstream sout;
         const auto [delim_open, delim_close] = (m_frozen)
-            ? Delims { .d_open = '(', .d_close = ')' }
-            : Delims { .d_open = '[', .d_close = ']' };
+            ? Delims { .d_open = '[', .d_close = ']' }
+            : Delims { .d_open = '{', .d_close = '}' };
 
         sout << delim_open;
 

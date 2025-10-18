@@ -8,8 +8,6 @@
 #include "runtime/fast_value.hpp"
 
 namespace Minuet::Runtime {
-    struct FlexiblePolicy {};
-
     /**
      * @brief Contains an index to FastValue map to simulate an array.
      */
@@ -23,7 +21,6 @@ namespace Minuet::Runtime {
 
     public:
         SequenceValue();
-        SequenceValue(FlexiblePolicy flex_opt);
 
         [[nodiscard]] auto items() noexcept -> std::vector<FastValue>&;
 

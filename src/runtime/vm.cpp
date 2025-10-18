@@ -234,12 +234,19 @@ namespace Minuet::Runtime::VM {
 
     void Engine::handle_seq_obj_push([[maybe_unused]] uint16_t metadata, int16_t dest, int16_t src_id, [[maybe_unused]] int16_t mode) noexcept {
         const auto abs_dest_id = m_rbp + dest;
-        const auto abs_src_id = m_rbp + src_id;
+        const auto src_mode = static_cast<Code::ArgMode>((metadata & 0b00001111000000) >> 6);
+
+        auto src_value_opt = fetch_value(src_mode, src_id);
+
+        if (!src_value_opt) {
+            m_res = static_cast<int>(Utils::ExecStatus::mem_error);
+            return;
+        }
+
+        auto src_value = src_value_opt.value();
 
         if (HeapValuePtr dest_obj_ref = m_memory[abs_dest_id].to_object_ptr(); dest_obj_ref) {
-            auto src_copy = m_memory[abs_src_id];
-
-            dest_obj_ref->push_value(src_copy);
+            dest_obj_ref->push_value(src_value);
             ++m_rip;
         } else {
             m_res = static_cast<int>(Utils::ExecStatus::mem_error);
