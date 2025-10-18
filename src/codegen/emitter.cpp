@@ -10,7 +10,6 @@
 #include "codegen/emitter.hpp"
 
 namespace Minuet::Codegen {
-    using namespace Codegen::Utils;
     using IR::Steps::Op;
     using IR::Steps::Step;
     using IR::Steps::AbsAddrTag;
@@ -64,7 +63,7 @@ namespace Minuet::Codegen {
             return {};
         }
 
-        return PseudoArg {
+        return Utils::PseudoArg {
             .value = aa_value,
             .tag = pseudo_arg_tag.value(),
         };
@@ -242,7 +241,7 @@ namespace Minuet::Codegen {
             m_patches.pop_back();
 
             if (patch.cf_forward) {
-                m_result_chunks.back()[patch.instruction_pos].args[0] = patched_jmp_ip;   
+                m_result_chunks.back()[patch.instruction_pos].args[0] = patched_jmp_ip;
             } else {
                 m_result_chunks.back()[patched_jmp_ip].args[0] = patch.target_ip;
             }
@@ -269,6 +268,8 @@ namespace Minuet::Codegen {
         const auto& [aa_0, op] = oper_unary;
         const auto opcode_opt = ([](Op ir_op) noexcept -> std::optional<Opcode> {
             switch (ir_op) {
+                case Op::make_seq: return Opcode::make_seq;
+                case Op::frz_seq_obj: return Opcode::frz_seq_obj;
                 case Op::jump: return Opcode::jump;
                 case Op::jump_if: return Opcode::jump_if;
                 case Op::jump_else: return Opcode::jump_else;
@@ -334,6 +335,43 @@ namespace Minuet::Codegen {
         return true;
     }
 
+    auto Emitter::emit_oper_ternary(const IR::Steps::OperTernary& oper_ternary) -> bool {
+        const auto& [aa_0, aa_1, aa_2, op] = oper_ternary;
+        const auto opcode_opt = ([](Op op) noexcept -> std::optional<Opcode> {
+            switch (op) {
+            case Op::seq_obj_push: return Opcode::seq_obj_push;
+            // case Op::seq_obj_pop: return Opcode::seq_obj_push;
+            case Op::seq_obj_get: return Opcode::seq_obj_get;
+            default: return {};
+            }
+        })(op);
+
+        if (!opcode_opt) {
+            return false;
+        }
+
+        auto arg_0_opt = translate_value_aa(aa_0);
+        auto arg_1_opt = translate_value_aa(aa_1);
+        auto arg_2_opt = translate_value_aa(aa_2);
+
+        if (!arg_0_opt || !arg_1_opt || !arg_2_opt) {
+            return false;
+        }
+
+        const auto opcode = opcode_opt.value();
+        const auto arg_0 = arg_0_opt.value();
+        const auto arg_1 = arg_1_opt.value();
+        const auto arg_2 = arg_2_opt.value();
+
+        m_result_chunks.back().emplace_back(Instruction {
+            .args = {arg_0.value, arg_1.value, arg_2.value},
+            .metadata = encode_metadata(arg_0, arg_1, arg_2),
+            .op = opcode,
+        });
+
+        return true;
+    }
+
     auto Emitter::emit_step(const IR::Steps::Step& step) -> bool {
         if (auto tac_unary_p = std::get_if<IR::Steps::TACUnary>(&step); tac_unary_p) {
             /// NOTE: handle TAC SSA (1 operand)
@@ -342,14 +380,17 @@ namespace Minuet::Codegen {
             /// NOTE: handle TAC SSA (2 operands)
             return emit_tac_binary(*tac_binary_p);
         } else if (auto oper_nonary_p = std::get_if<IR::Steps::OperNonary>(&step); oper_nonary_p) {
-            /// NOTE: handle opcode-style SSA (no operands)
+            /// NOTE: handle opcode-style IR (no operands)
             return emit_oper_nonary(*oper_nonary_p);
         } else if (auto oper_unary_p = std::get_if<IR::Steps::OperUnary>(&step); oper_unary_p) {
-            /// NOTE: handle opcode-style SSA (1 operands)
+            /// NOTE: handle opcode-style IR (1 operands)
             return emit_oper_unary(*oper_unary_p);
         } else if (auto oper_binary_p = std::get_if<IR::Steps::OperBinary>(&step); oper_binary_p) {
-            /// NOTE: handle opcode-style SSA (2 operands)
+            /// NOTE: handle opcode-style IR (2 operands)
             return emit_oper_binary(*oper_binary_p);
+        } else if (auto oper_ternary_p = std::get_if<IR::Steps::OperTernary>(&step); oper_ternary_p) {
+            /// NOTE: handle opcode-style IR (3 operands)
+            return emit_oper_ternary(*oper_ternary_p);
         } else {
             return false;
         }
