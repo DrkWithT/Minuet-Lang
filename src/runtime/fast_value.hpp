@@ -47,6 +47,7 @@ namespace Minuet::Runtime {
         boolean,
         int32,
         flt64,
+        val_ref,
         sequence,
     };
 
@@ -56,6 +57,7 @@ namespace Minuet::Runtime {
             uint8_t dud;
             int scalar_v;
             double dbl_v;
+            FastValue* fv_p;
             HeapValueBase* obj_p;
         } m_data;
         FVTag m_tag;
@@ -79,6 +81,11 @@ namespace Minuet::Runtime {
         constexpr FastValue(double d) noexcept
         : m_data {}, m_tag {FVTag::flt64} {
             m_data.dbl_v = d;
+        }
+
+        constexpr FastValue(FastValue* ref_p) noexcept
+        : m_data {}, m_tag {FVTag::val_ref} {
+            m_data.fv_p = ref_p;
         }
 
         constexpr FastValue(HeapValuePtr obj_p) noexcept
@@ -110,6 +117,8 @@ namespace Minuet::Runtime {
                 return false;
             }
         }
+
+        [[nodiscard]] auto emplace_other(const FastValue& arg) & noexcept -> bool;
 
         [[nodiscard]] auto operator*(const FastValue& arg) & noexcept -> FastValue;
         [[nodiscard]] auto operator/(const FastValue& arg) & -> FastValue;

@@ -293,7 +293,7 @@ namespace Minuet::Runtime::VM {
 
         if (HeapValuePtr src_obj_ref = m_memory[abs_src_id].to_object_ptr(); src_obj_ref) {
             if (auto item_opt = src_obj_ref->get_value(pos_i32); item_opt) {
-                m_memory[abs_dest_id] = *item_opt.value();
+                m_memory[abs_dest_id] = {item_opt.value()};
                 ++m_rip;
                 return;
             }
@@ -351,7 +351,14 @@ namespace Minuet::Runtime::VM {
 
         const auto real_mem_dest_id = m_rbp + dest;
 
-        m_memory[real_mem_dest_id] = std::move(src_value_opt.value());
+        /// NOTE: If the register's FastValue is a primitive, replace it. But if the FastValue contains a reference to the actual value (e.g a list's item) then `FastValue::emplace_other()` is necessary.
+        if (auto& dest_ref = m_memory[real_mem_dest_id]; dest_ref.tag() != FVTag::val_ref) {
+            dest_ref = std::move(src_value_opt.value());
+        } else if (!dest_ref.emplace_other(src_value_opt.value())) {
+            m_res = static_cast<int>(Utils::ExecStatus::mem_error);
+            return;
+        }
+
         m_rft = std::max(m_rft, real_mem_dest_id);
         ++m_rip;
     }
