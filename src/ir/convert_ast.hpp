@@ -51,6 +51,7 @@ namespace Minuet::IR::Convert {
         [[nodiscard]] auto apply_pending_links() -> bool;
 
         [[nodiscard]] auto emit_literal(const Syntax::Exprs::Literal& literal, std::string_view source) -> std::optional<Steps::AbsAddress>;
+        [[nodiscard]] auto emit_sequence(const Syntax::Exprs::Sequence& sequence, std::string_view source) -> std::optional<Steps::AbsAddress>;
         [[nodiscard]] auto emit_unary(const Syntax::Exprs::Unary& unary, std::string_view source) -> std::optional<Steps::AbsAddress>;
         [[nodiscard]] auto emit_binary(const Syntax::Exprs::Binary& binary, std::string_view source) -> std::optional<Steps::AbsAddress>;
         [[nodiscard]] auto emit_call(const Syntax::Exprs::Call& call, std::string_view source) -> std::optional<Steps::AbsAddress>;

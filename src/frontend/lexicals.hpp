@@ -9,6 +9,7 @@ namespace Minuet::Frontend::Lexicals {
         unknown,
         spaces,
         comment,
+        keyword_fn,
         keyword_import,
         keyword_fun,
         keyword_native,

@@ -74,6 +74,7 @@ namespace Minuet::Codegen {
         [[nodiscard]] auto emit_oper_nonary(const IR::Steps::OperNonary& oper_nonary) -> bool;
         [[nodiscard]] auto emit_oper_unary(const IR::Steps::OperUnary& oper_unary) -> bool;
         [[nodiscard]] auto emit_oper_binary(const IR::Steps::OperBinary& oper_binary) -> bool;
+        [[nodiscard]] auto emit_oper_ternary(const IR::Steps::OperTernary& oper_ternary) -> bool;
         [[nodiscard]] auto emit_step(const IR::Steps::Step& step) -> bool;
 
         [[nodiscard]] auto emit_bb(const IR::CFG::BasicBlock& bb) -> bool;

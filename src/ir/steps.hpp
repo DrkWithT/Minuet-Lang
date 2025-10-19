@@ -8,6 +8,11 @@
 namespace Minuet::IR::Steps {
     enum class Op : uint8_t {
         nop,
+        make_seq,
+        seq_obj_push,
+        seq_obj_pop,
+        seq_obj_get,
+        frz_seq_obj,
         neg,
         inc,
         dec,
@@ -86,7 +91,14 @@ namespace Minuet::IR::Steps {
         Op op;
     };
 
-    using Step = std::variant<TACUnary, TACBinary, OperNonary, OperUnary, OperBinary>;
+    struct OperTernary {
+        AbsAddress arg_0;
+        AbsAddress arg_1;
+        AbsAddress arg_2;
+        Op op;
+    };
+
+    using Step = std::variant<TACUnary, TACBinary, OperNonary, OperUnary, OperBinary, OperTernary>;
 }
 
 #endif

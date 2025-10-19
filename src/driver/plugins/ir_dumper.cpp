@@ -42,15 +42,38 @@ namespace Minuet::Driver::Plugins {
 
     void IRDumper::print_step(const Step& step) const {
         if (const auto tac_unary_p = std::get_if<IR::Steps::TACUnary>(&step); tac_unary_p) {
-            std::print("{} = {} {}", fmt_step_arg(tac_unary_p->dest), ir_op_name(tac_unary_p->op), fmt_step_arg(tac_unary_p->arg_0));
+            std::print("{} = {} {}",
+                fmt_step_arg(tac_unary_p->dest),
+                ir_op_name(tac_unary_p->op),
+                fmt_step_arg(tac_unary_p->arg_0)
+            );
         } else if (const auto tac_binary_p = std::get_if<IR::Steps::TACBinary>(&step); tac_binary_p) {
-            std::print("{} = {} {} {}", fmt_step_arg(tac_binary_p->dest), fmt_step_arg(tac_binary_p->arg_0), ir_op_name(tac_binary_p->op), fmt_step_arg(tac_binary_p->arg_1));
+            std::print("{} = {} {} {}",
+                fmt_step_arg(tac_binary_p->dest),
+                fmt_step_arg(tac_binary_p->arg_0),
+                ir_op_name(tac_binary_p->op),
+                fmt_step_arg(tac_binary_p->arg_1)
+            );
         } else if (const auto oper_nonary_p = std::get_if<IR::Steps::OperNonary>(&step); oper_nonary_p) {
             std::print("{}", ir_op_name(oper_nonary_p->op));
         } else if (const auto oper_unary_p = std::get_if<IR::Steps::OperUnary>(&step); oper_unary_p) {
-            std::print("{} {}", ir_op_name(oper_unary_p->op), fmt_step_arg(oper_unary_p->arg_0));
+            std::print("{} {}",
+                ir_op_name(oper_unary_p->op),
+                fmt_step_arg(oper_unary_p->arg_0)
+            );
         } else if (const auto oper_binary_p = std::get_if<IR::Steps::OperBinary>(&step); oper_binary_p) {
-            std::print("{} {} {}", ir_op_name(oper_binary_p->op), fmt_step_arg(oper_binary_p->arg_0), fmt_step_arg(oper_binary_p->arg_1));
+            std::print("{} {} {}",
+                ir_op_name(oper_binary_p->op),
+                fmt_step_arg(oper_binary_p->arg_0),
+                fmt_step_arg(oper_binary_p->arg_1)
+            );
+        } else if (const auto oper_ternary_p = std::get_if<IR::Steps::OperTernary>(&step); oper_ternary_p) {
+            std::print("{} {} {}",
+                ir_op_name(oper_ternary_p->op),
+                fmt_step_arg(oper_ternary_p->arg_0),
+                fmt_step_arg(oper_ternary_p->arg_1),
+                fmt_step_arg(oper_ternary_p->arg_2)
+            );
         }
 
         std::println();

@@ -30,16 +30,22 @@ namespace Minuet::Syntax::Exprs {
     template <typename ... ExprTypes>
     struct ExprNode;
     struct Literal;
+    struct Sequence;
     struct Lambda;
     struct Call;
     struct Unary;
     struct Binary;
     struct Assign;
 
-    using ExprPtr = std::unique_ptr<ExprNode<Literal, Lambda, Call, Unary, Binary, Assign>>;
+    using ExprPtr = std::unique_ptr<ExprNode<Literal, Sequence, Lambda, Call, Unary, Binary, Assign>>;
 
     struct Literal {
         Frontend::Lexicals::Token token;
+    };
+
+    struct Sequence {
+        std::vector<ExprPtr> items;
+        bool is_tuple;
     };
 
     struct Lambda {
@@ -75,7 +81,7 @@ namespace Minuet::Syntax::Exprs {
         uint32_t src_end;
     };
 
-    using Expr = ExprNode<Literal, Lambda, Call, Unary, Binary, Assign>;
+    using Expr = ExprNode<Literal, Sequence, Lambda, Call, Unary, Binary, Assign>;
 }
 
 #endif

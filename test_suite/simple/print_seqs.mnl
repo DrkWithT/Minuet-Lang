@@ -1,0 +1,11 @@
+# print some lists and tuples #
+
+fun main: [] => {
+    def nums = [1, 2, 3]
+    def mat_id = [[1, 0], [0, 1]]
+
+    print(nums)
+    print(mat_id)
+
+    return 0
+}

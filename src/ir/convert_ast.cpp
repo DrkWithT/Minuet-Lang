@@ -23,6 +23,7 @@ namespace Minuet::IR::Convert {
     using Steps::OperNonary;
     using Steps::OperUnary;
     using Steps::OperBinary;
+    using Steps::OperTernary;
     using IR::CFG::FullIR;
     using Utils::NameLocation;
 
@@ -176,7 +177,7 @@ namespace Minuet::IR::Convert {
         return true;
     }
 
-    
+
     auto ASTConversion::emit_literal(const Syntax::Exprs::Literal& literal, std::string_view source) -> std::optional<AbsAddress> {
         const auto literal_tag = literal.token.type;
         std::string literal_lexeme = std::format("{}", token_to_sv(literal.token, source));
@@ -196,6 +197,55 @@ namespace Minuet::IR::Convert {
         }
 
         return temp;
+    }
+
+    auto ASTConversion::emit_sequence(const Syntax::Exprs::Sequence& sequence, std::string_view source) -> std::optional<Steps::AbsAddress> {
+        auto temp_value_aa_opt = gen_temp_aa();
+
+        if (!temp_value_aa_opt) {
+            return {};
+        }
+
+        auto value_aa = temp_value_aa_opt.value();
+        const auto is_fixed_size = sequence.is_tuple;
+
+        m_result_cfgs.back().get_newest_bb().value()->steps.emplace_back(
+            OperUnary {
+                .arg_0 = value_aa,
+                .op = Op::make_seq,
+            }
+        );
+
+        for (const auto& temp_item : sequence.items) {
+            if (auto item_aa_opt = emit_expr(temp_item, source); item_aa_opt) {
+                auto item_aa = item_aa_opt.value();
+
+                m_result_cfgs.back().get_newest_bb().value()->steps.emplace_back(
+                    OperTernary {
+                        .arg_0 = value_aa,
+                        .arg_1 = item_aa,
+                        .arg_2 = {
+                            .id = 1, // construct sequence in-order by pushing back...
+                            .tag = AbsAddrTag::immediate,
+                        },
+                        .op = Op::seq_obj_push,
+                    }
+                );
+            } else {
+                return {};
+            }
+        }
+
+        if (is_fixed_size) {
+            m_result_cfgs.back().get_newest_bb().value()->steps.emplace_back(
+                OperUnary {
+                    .arg_0 = value_aa,
+                    .op = Op::frz_seq_obj,
+                }
+            );
+        }
+
+        return value_aa;
     }
 
     auto ASTConversion::emit_unary(const Syntax::Exprs::Unary& unary, std::string_view source) -> std::optional<AbsAddress> {
@@ -247,11 +297,11 @@ namespace Minuet::IR::Convert {
             case Operator::at_most:
             case Operator::at_least:
                 {
-                    if (auto dest_aa = gen_temp_aa(); dest_aa) {
-                        auto result_aa = dest_aa.value();
+                    if (auto dest_aa_opt = gen_temp_aa(); dest_aa_opt) {
+                        auto result_aa = dest_aa_opt.value();
 
                         m_result_cfgs.back().get_newest_bb().value()->steps.emplace_back(TACBinary {
-                            .dest = dest_aa.value(),
+                            .dest = result_aa,
                             .arg_0 = lhs_aa_opt.value(),
                             .arg_1 = rhs_aa_opt.value(),
                             .op = operator_to_ir_op(bin_operator).value(),
@@ -262,6 +312,25 @@ namespace Minuet::IR::Convert {
 
                     return {};
                 }
+            case Operator::access:
+                {
+                    /// TODO: add support for dictionary accesses?
+                    if (auto dest_aa_opt = gen_temp_aa(); dest_aa_opt) {
+                        auto dest_aa = dest_aa_opt.value();
+
+                        m_result_cfgs.back().get_newest_bb().value()->steps.emplace_back(OperTernary {
+                            .arg_0 = dest_aa,
+                            .arg_1 = lhs_aa_opt.value(),
+                            .arg_2 = rhs_aa_opt.value(),
+                            .op = Op::seq_obj_get,
+                        });
+
+                        return dest_aa;
+                    }
+
+                    return {};
+                }
+                break;
             default:
                 {
                     const auto binary_src_beg = binary.left->src_begin;
@@ -285,20 +354,20 @@ namespace Minuet::IR::Convert {
 
         /// NOTE: Any call will take the function ID and then N (stack argument count).
         const int16_t real_args_n = call.args.size();
-        
+
         for (int16_t arg_idx = 0; arg_idx < real_args_n; ++arg_idx) {
             if (auto arg_aa_opt = emit_expr(call.args.at(arg_idx), source); arg_aa_opt) {
                 const auto arg_dest = gen_temp_aa().value();
-                
+
                 m_result_cfgs.back().get_newest_bb().value()->steps.emplace_back(TACUnary {
                     .dest = arg_dest,
                     .arg_0 = arg_aa_opt.value(),
                     .op = Op::nop,
                 });
-                
+
                 continue;
             }
-            
+
             return {};
         }
 
@@ -350,6 +419,8 @@ namespace Minuet::IR::Convert {
 
         if (std::holds_alternative<Literal>(expr->data)) {
             return emit_literal(std::get<Literal>(expr->data), source);
+        } else if (std::holds_alternative<Sequence>(expr->data)) {
+            return emit_sequence(std::get<Sequence>(expr->data), source);
         } else if (std::holds_alternative<Syntax::Exprs::Call>(expr->data)) {
             return emit_call(std::get<Call>(expr->data), source);
         } else if (std::holds_alternative<Syntax::Exprs::Unary>(expr->data)) {
@@ -403,10 +474,10 @@ namespace Minuet::IR::Convert {
     /**
      * @brief Constructs the parts of a CFG that represent forward branching constructs like if / else stmts.
      * @note Assumes that the enclosing block visited has a BB placed prior... Patching dud jumps of step pos 0 will be handled later.
-     * @param cond 
-     * @param source 
-     * @return true 
-     * @return false 
+     * @param cond
+     * @param source
+     * @return true
+     * @return false
      */
     auto ASTConversion::emit_if(const Syntax::Stmts::If& cond, std::string_view source) -> bool {
         // Case 1:
@@ -678,7 +749,7 @@ namespace Minuet::IR::Convert {
         if (m_prepassing) {
             std::string func_name = std::format("{}", token_to_sv(fun.name, source));
             const auto next_func_aa_opt = gen_fun_aa();
-    
+
             if (!next_func_aa_opt) {
                 return false;
             }

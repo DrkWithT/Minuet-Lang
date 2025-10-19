@@ -44,6 +44,7 @@ namespace Minuet::Frontend::Parsing {
 
         [[nodiscard]] auto parse_literal(Lexing::Lexer& lexer, std::string_view src) -> Syntax::Exprs::ExprPtr;
         [[nodiscard]] auto parse_primary(Lexing::Lexer& lexer, std::string_view src) -> Syntax::Exprs::ExprPtr;
+        [[nodiscard]] auto parse_sequence(Lexing::Lexer& lexer, std::string_view src) -> Syntax::Exprs::ExprPtr;
         [[nodiscard]] auto parse_lambda(Lexing::Lexer& lexer, std::string_view src) -> Syntax::Exprs::ExprPtr;
         [[nodiscard]] auto parse_lhs(Lexing::Lexer& lexer, std::string_view src) -> Syntax::Exprs::ExprPtr;
         [[nodiscard]] auto parse_call(Lexing::Lexer& lexer, std::string_view src) -> Syntax::Exprs::ExprPtr;

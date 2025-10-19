@@ -1,0 +1,14 @@
+# test indexing of tuples #
+
+fun main: [] => {
+    def foo = [1]
+    def baz = foo.0
+
+    print(baz)
+
+    foo.0 = 0
+
+    print(foo)
+
+    return 0
+}

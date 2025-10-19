@@ -30,6 +30,11 @@
 
 ### Opcodes:
  - `nop`: does nothing except increment `RIP`
+ - `make_seq <dest-reg>`: creates an empty sequence on the heap and loads its reference in a register
+ - `seq_obj_push <dest-obj-reg> <src-value-reg> <mode>`: appends to the front or back of a sequence (modes 0 or 1) if it's flexible
+ - `seq_obj_pop <dest-value-reg> <src-obj-reg> <mode>`: removes an item from the front or back of a sequence (modes 0 or 1) if it's flexible
+ - `seq_obj_get <dest-value-reg> <src-obj-reg> <index>`: retrieves the item from a sequence at a given index
+ - `frz_seq_obj <dest-obj-reg>`: makes the sequence fixed size _after tuple initialization_
  - `load_const <dest-reg> <imm>`: places a constant by index into a register
  - `mov <dest-reg> <src: const / reg>`: places a copied source value (constant or register) to a destination register
  - `neg <dest-reg>`: negates a register value in-place
@@ -56,7 +61,7 @@
  - `native_call <native-func-id: imm>`: invokes the registered native function upon VM state:
    - The native function must respect the "calling convention"... It must access by register base offset (`caller_RFT - arg_count + 1`).
    - Native functions must call `Engine::handle_native_fn_return(<result-Value>)` on completion _only if_ anything is returned.
- - `ret <src: const / reg>`: places a return value at the `RBP` location, destroys the current register frame, and restores some special registers (`RFV`, `RES`) and caller state from the top call frame 
+ - `ret <src: const / reg>`: places a return value at the `RBP` location, destroys the current register frame, and restores some special registers (`RFV`, `RES`) and caller state from the top call frame
  - `halt <status-code: imm>`: stops program execution with the specified `status-code`
 
 ### Runtime Status Codes:
@@ -65,6 +70,6 @@
  - op_error: invalid opcode
  - arg_error: invalid opcode arg
  - mem_error: bad VM memory access on register slot / stack
- - math_error: illegal math operation e.g division by `0` 
+ - math_error: illegal math operation e.g division by `0`
  - user_error: user-caused failure (main did not return `int(0)`)
  - any_error: general error

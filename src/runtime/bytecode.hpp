@@ -11,6 +11,11 @@
 namespace Minuet::Runtime::Code {
     enum class Opcode : uint8_t {
         nop,
+        make_seq,
+        seq_obj_push,
+        seq_obj_pop,
+        seq_obj_get,
+        frz_seq_obj,
         load_const,
         mov,
         neg,
@@ -59,7 +64,7 @@ namespace Minuet::Runtime::Code {
     [[nodiscard]] constexpr auto instruct_arity(Instruction inst) -> uint8_t {
         return static_cast<uint8_t>(inst.metadata & 0b11);
     }
-    
+
     template <std::size_t ArgPos>
     [[nodiscard]] constexpr auto instruct_argval_at(Instruction inst) -> uint16_t {
         if constexpr (ArgPos >= 0 && ArgPos < 3) {
