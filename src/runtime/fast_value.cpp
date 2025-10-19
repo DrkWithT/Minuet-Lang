@@ -35,7 +35,7 @@ namespace Minuet::Runtime {
         if (self_tag == FVTag::val_ref && arg_tag == FVTag::val_ref) {
             m_data.fv_p = arg.m_data.fv_p;
             return true;
-        } else if (arg_tag != FVTag::val_ref) {
+        } else if (self_tag == FVTag::val_ref && arg_tag != FVTag::val_ref) {
             if (m_data.fv_p != nullptr) {
                 return m_data.fv_p->emplace_other(arg);
             }
