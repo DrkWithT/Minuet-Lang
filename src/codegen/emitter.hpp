@@ -16,7 +16,8 @@ namespace Minuet::Codegen {
         };
 
         struct ActiveLoop {
-            std::vector<std::size_t> brk_ips;
+            std::vector<std::size_t> brk_ips;  // loop-breaking jumps
+            std::vector<std::size_t> cont_ips; // loop-continuing jumps
             std::size_t start_ip;
             std::size_t exit_ip;
         };

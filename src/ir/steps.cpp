@@ -34,9 +34,8 @@ namespace Minuet::IR::Steps {
         "#begin_while",
         "#end_while",
         "#mark_break",
+        "#mark_continue",
         "#save_patch",
-        "#save_patch_back",
-        "#shuffle_patch",
         "#patch_jmp_else",
         "#patch_jmp",
     };
