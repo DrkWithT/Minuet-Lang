@@ -96,7 +96,7 @@ namespace Minuet::Driver::Plugins {
 
             auto next_node = cfg.get_bb(next_bb_id).value();
 
-            std::println("\nBasic Block #{}:\n", next_bb_id);
+            std::println("\nBasic Block #{}:\nT: {}, F: {}\n", next_bb_id, next_node->truthy_id, next_node->falsy_id);
 
             for (const auto& step : next_node->steps) {
                 print_step(step);
@@ -104,11 +104,11 @@ namespace Minuet::Driver::Plugins {
 
             visited_ids.insert(next_bb_id);
 
-            if (const auto falsy_child_id = next_node->falsy_id; falsy_child_id != -1 && !visited_ids.contains(falsy_child_id)) {
+            if (const auto falsy_child_id = next_node->falsy_id; falsy_child_id != -1) {
                 frontier_ids.push(falsy_child_id);
             }
 
-            if (const auto truthy_child_id = next_node->truthy_id; truthy_child_id != -1 && !visited_ids.contains(truthy_child_id)) {
+            if (const auto truthy_child_id = next_node->truthy_id; truthy_child_id != -1) {
                 frontier_ids.push(truthy_child_id);
             }
         }

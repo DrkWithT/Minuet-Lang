@@ -64,7 +64,7 @@ namespace Minuet::IR::Convert {
         [[nodiscard]] auto emit_return(const Syntax::Stmts::Return& ret, std::string_view source) -> bool;
         [[nodiscard]] auto emit_while(const Syntax::Stmts::While& wloop, std::string_view source) -> bool;
         [[nodiscard]] auto emit_break(const Syntax::Stmts::Break& loop_brk, std::string_view source) -> bool;
-        [[nodiscard]] auto emit_block(const Syntax::Stmts::Block& block, std::string_view source) -> bool;
+        [[nodiscard]] auto emit_block(const Syntax::Stmts::Block& block, std::string_view source) -> int;
         [[nodiscard]] auto emit_function(const Syntax::Stmts::Function& fun, std::string_view source) -> bool;
         [[nodiscard]] auto emit_stmt(const Syntax::Stmts::StmtPtr& stmt, std::string_view source) -> bool;
 

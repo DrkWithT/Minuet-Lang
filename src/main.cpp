@@ -1,25 +1,19 @@
 #include <iostream>
 #include <print>
 
-#include "runtime/vm.hpp"
+#include "mintrinsics/mnl_stdio.hpp"
+#include "mintrinsics/mnl_lists.hpp"
 #include "driver/driver.hpp"
 #include "driver/plugins/disassembler.hpp"
 #include "driver/plugins/ir_dumper.hpp"
 
 constexpr auto minuet_version_major = 0;
-constexpr auto minuet_version_minor = 3;
-constexpr auto minuet_version_patch = 0;
+constexpr auto minuet_version_minor = 4;
+constexpr auto minuet_version_patch = 2;
 
 
 using namespace Minuet;
 
-[[nodiscard]] auto native_print_value(Runtime::VM::Engine& vm, int16_t argc) -> bool {
-    const auto& argument_value = vm.handle_native_fn_access(argc, 0);
-
-    std::println("{}", argument_value.to_string());
-
-    return true;
-}
 
 class DriverBuilder {
 private:
@@ -84,7 +78,10 @@ int main(int argc, char* argv[]) {
         return 1;
     }
 
-    app.register_native_proc({"print", native_print_value});
+    app.register_native_proc({"print", Intrinsics::native_print_value});
+    app.register_native_proc({"prompt_int", Intrinsics::native_prompt_int});
+    app.register_native_proc({"prompt_float", Intrinsics::native_prompt_float});
+    app.register_native_proc({"len_of", Intrinsics::native_len_of});
 
     return app(arg_2) ? 0 : 1 ;
 }

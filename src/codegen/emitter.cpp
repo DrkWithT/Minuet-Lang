@@ -123,6 +123,8 @@ namespace Minuet::Codegen {
             return true;
         }
 
+        std::println("Invalid IR op at emit_tac_unary in current BB...");
+
         return false;
     }
 
@@ -147,6 +149,8 @@ namespace Minuet::Codegen {
         })(op);
 
         if (!opcode_opt) {
+            std::println("Invalid opcode at emit_tac_binary in current BB...");
+
             return false;
         }
 
@@ -156,6 +160,8 @@ namespace Minuet::Codegen {
         auto arg_1_opt = translate_value_aa(arg_1);
 
         if (!dest_opt || !arg_0_opt || !arg_1_opt) {
+            std::println("Invalid locatios at emit_tac_binary in current BB...");
+
             return false;
         }
 
@@ -186,6 +192,7 @@ namespace Minuet::Codegen {
 
             m_active_loops.emplace_back(Utils::ActiveLoop {
                 .brk_ips = {},
+                .cont_ips = {},
                 .start_ip = starting_nop_ip,
                 .exit_ip = 0,
             });
@@ -194,11 +201,14 @@ namespace Minuet::Codegen {
 
             m_active_loops.back().exit_ip = ending_nop_ip;
 
-            for (
-                const auto& [break_ips, _, loop_end] = m_active_loops.back();
-                const auto& brk_jump_ip : break_ips
-            ) {
+            const auto& [break_ips, continuing_ips, loop_begin, loop_end] = m_active_loops.back();
+
+            for (const auto& brk_jump_ip : break_ips) {
                 m_result_chunks.back()[brk_jump_ip].args[0] = loop_end;
+            }
+
+            for (const auto& cnt_jump_ip : continuing_ips) {
+                m_result_chunks.back()[cnt_jump_ip].args[0] = loop_begin;
             }
 
             m_active_loops.pop_back(); // NOTE: the most recent active loop ref dangles, but it's OK because its usage has certainly finished here.
@@ -206,6 +216,10 @@ namespace Minuet::Codegen {
             const auto brk_jump_ip = m_result_chunks.back().size() - 1;
 
             m_active_loops.back().brk_ips.push_back(brk_jump_ip);
+        } else if (op == Op::meta_mark_continue) {
+            const auto cnt_jump_ip = m_result_chunks.back().size() - 1;
+
+            m_active_loops.back().cont_ips.push_back(cnt_jump_ip);
         } else if (op == Op::meta_save_patch) {
             /// NOTE: Patches a jumping instruction forwards.
             const auto patchable_ip = m_result_chunks.back().size() - 1;
@@ -215,24 +229,19 @@ namespace Minuet::Codegen {
                 .target_ip = 0,
                 .cf_forward = true,
             });
-        } else if (op == Op::meta_save_patch_back) {
-            /// NOTE: patches for a future jump instruction that returns to this one.
-            const auto patching_ip = m_result_chunks.back().size() - 1;
+        } else if (op == Op::meta_patch_jmp_else) {
+            const auto patched_jmp_else_ip = m_result_chunks.back().size() - 1;
 
-            m_patches.emplace_back(Utils::Patch {
-                .instruction_pos = 0,
-                .target_ip = patching_ip,
-                .cf_forward = false,
-            });
-        } else if (op == Op::meta_shuffle_patch) {
-            auto top_patch = m_patches.back();
+            const auto patch = m_patches.back();
             m_patches.pop_back();
 
-            auto prior_patch = m_patches.back();
-            m_patches.pop_back();
-
-            m_patches.emplace_back(top_patch);
-            m_patches.emplace_back(prior_patch);
+            if (patch.cf_forward) {
+                m_result_chunks.back()[patch.instruction_pos].args[0] = patched_jmp_else_ip;
+            } else {
+                /// NOTE: No support for backwards jump_else is currently planned.
+                std::println("Invalid case (jump_else backwards) at emit_oper_nonary in current BB...");
+                return false;
+            }
         } else if (op == Op::meta_patch_jmp) {
             /// NOTE: Add support for backwards JUMP patching later for constructs, including while loops!
             const auto patched_jmp_ip = m_result_chunks.back().size() - 1;
@@ -245,19 +254,8 @@ namespace Minuet::Codegen {
             } else {
                 m_result_chunks.back()[patched_jmp_ip].args[0] = patch.target_ip;
             }
-        } else if (op == Op::meta_patch_jmp_else) {
-            const auto patched_jmp_else_ip = m_result_chunks.back().size() - 1;
-
-            const auto patch = m_patches.back();
-            m_patches.pop_back();
-
-            if (patch.cf_forward) {
-                m_result_chunks.back()[patch.instruction_pos].args[0] = patched_jmp_else_ip;
-            } else {
-                /// NOTE: No support for backwards jump_else is currently planned.
-                return false;
-            }
         } else {
+            std::println("Invalid IR op at emit_oper_nonary in current BB...");
             return false;
         }
 
@@ -280,6 +278,8 @@ namespace Minuet::Codegen {
         })(op);
 
         if (!opcode_opt) {
+            std::println("Invalid opcode at emit_oper_unary in current BB!");
+
             return false;
         }
 
@@ -287,6 +287,8 @@ namespace Minuet::Codegen {
         auto arg_0_opt = translate_value_aa(aa_0);
 
         if (!arg_0_opt) {
+            std::println("Invalid opcode 'arg_0' at emit_oper_unary in current BB!");
+
             return false;
         }
 
@@ -312,6 +314,8 @@ namespace Minuet::Codegen {
         })(op);
 
         if (!opcode_opt) {
+            std::println("Invalid opcode at emit_oper_unary in current BB!");
+
             return false;
         }
 
@@ -320,6 +324,8 @@ namespace Minuet::Codegen {
         auto arg_1_opt = translate_value_aa(aa_1);
 
         if (!arg_0_opt || !arg_1_opt) {
+            std::println("Invalid opcode 'arg_0' or `arg_1` at emit_oper_binary in current BB!");
+
             return false;
         }
 
@@ -347,6 +353,8 @@ namespace Minuet::Codegen {
         })(op);
 
         if (!opcode_opt) {
+            std::println("Invalid opcode at emit_oper_ternary in current BB!");
+
             return false;
         }
 
@@ -355,6 +363,8 @@ namespace Minuet::Codegen {
         auto arg_2_opt = translate_value_aa(aa_2);
 
         if (!arg_0_opt || !arg_1_opt || !arg_2_opt) {
+            std::println("Invalid opcode arg(s) at emit_oper_ternary in current BB!");
+
             return false;
         }
 

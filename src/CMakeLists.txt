@@ -13,6 +13,9 @@ target_sources(driver PRIVATE driver/plugins/ir_dumper.cpp PRIVATE driver/plugin
 add_library(runtime "")
 target_sources(runtime PRIVATE runtime/fast_value.cpp PRIVATE runtime/sequence_value.cpp PRIVATE runtime/heap_storage.cpp PRIVATE runtime/bytecode.cpp PRIVATE runtime/vm.cpp)
 
+add_library(mintrinsics "")
+target_sources(mintrinsics PRIVATE mintrinsics/mnl_stdio.cpp PRIVATE mintrinsics/mnl_lists.cpp)
+
 add_executable(minuetm main.cpp)
 target_link_directories(minuetm PRIVATE ${MINUET_LANG_LIB_DIR})
-target_link_libraries(minuetm PRIVATE frontend PRIVATE ir PRIVATE codegen PRIVATE driver PRIVATE runtime)
+target_link_libraries(minuetm PRIVATE frontend PRIVATE ir PRIVATE codegen PRIVATE driver PRIVATE runtime PRIVATE mintrinsics)

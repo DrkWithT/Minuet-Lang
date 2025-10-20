@@ -20,14 +20,29 @@ _Minuet_ is a small, Python & C inspired language for simple programs. Unlike sh
  - [VM](/docs/vm.md)
 
 ### Roadmap
- - `0.4.0`: Add sequential object support (requires an object heap & hidden object references)
- - `0.4.1`: Fixes!
-   - Fix sequence opcodes if needed...
-   - Fix nested loops!
- - `0.5.0`: Add basic list support & operators for sequence containers
+ - `0.4.3` **(WIP)**: Add better command line arg processing.
+   - Add robust argument parsing.
+   - Use dependency injection for adding interpreter commands.
+ - `0.5.0`: Add simple semantic analysis:
+   - Detect undeclared variables
+   - Detect invalid assignments, calls, and non-list accesses
+ - `0.6.0`: Add basic list support & operators for sequence containers
    - Add `*++`, `*--`, `++*`, `--*` operators for push/pop operations at back/front
- - `0.6.0`: Add lambda support.
  - `0.6.1`: Add simple bytecode optimization passes, following dependency injection.
    - Unused variable elimination
    - Reduction of useless `mov` and `nop` instructions
    - Dead branch elimination
+ - `0.7.0`: Add dictionaries
+ - `0.8.0`: Add strings
+   - `String` type
+   - `string_do_xyz` intrinsic functions
+ - `0.9.0`: Add program argument support (wrapped `char* argv[]` strings):
+   - Add `[args]` intrinsics: `get_argv()`, `get_argc()`
+ - `0.9.1`: Add file I/O support:
+   - Add `open_file(path)` intrinsic, yielding an `fd`
+   - Add `append_to_file(fd, mode)` intrinsic
+   - Add `close_file(fd)` intrinsic
+ - `0.10.0`: Add simple x64 JIT for pure, global functions taking integers.
+   - Prototype JIT compiler using CFG IR, regalloc, etc.
+   - Create a JIT compilation thread which runs in the background, adding a JIT version of a function when finished.
+   - Add JIT / bytecode dispatch in `call` instruction.

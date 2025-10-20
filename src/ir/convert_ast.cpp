@@ -494,8 +494,7 @@ namespace Minuet::IR::Convert {
         //     (Post-Block)
 
         /// 1: handle the initial basic block- here, the if-stmt check is done before the actual branching by JUMP_ELSE... that instruction pops off a boolean and then jumps if the boolean is false.
-        const auto pre_if_bb_id = m_result_cfgs.back().bb_count() - 1;
-        const auto if_true_bb_id = pre_if_bb_id + 1;
+        const auto pre_cond_bb_id = m_result_cfgs.back().bb_count() - 1;
 
         auto cond_result_aa = emit_expr(cond.cond_expr, source);
 
@@ -514,14 +513,11 @@ namespace Minuet::IR::Convert {
             .op = Op::meta_save_patch,
         });
 
-        /// 2: handle the truthy body- then place a JUMP past the falsy body.
-        if (!emit_stmt(cond.if_body, source)) {
-            return false;
-        }
+        const auto cond_if_bb_id = emit_block(std::get<Syntax::Stmts::Block>(cond.if_body->data), source);
 
         m_pending_links.push({
-            .from = pre_if_bb_id,
-            .to = if_true_bb_id,
+            .from = pre_cond_bb_id,
+            .to = cond_if_bb_id,
         });
 
         /// 3: handle the falsy body if present?
@@ -543,11 +539,7 @@ namespace Minuet::IR::Convert {
                 .op = Op::meta_patch_jmp_else,
             });
 
-            if (!emit_stmt(cond.else_body, source)) {
-                return false;
-            }
-
-            const auto else_body_bb_id = m_result_cfgs.back().bb_count() - 1;
+            const auto cond_else_bb_id = emit_block(std::get<Syntax::Stmts::Block>(cond.else_body->data), source);
 
             m_result_cfgs.back().get_newest_bb().value()->steps.emplace_back(OperNonary {
                 .op = Op::nop,
@@ -556,19 +548,19 @@ namespace Minuet::IR::Convert {
                 .op = Op::meta_patch_jmp,
             });
             m_pending_links.push({
-                .from = pre_if_bb_id,
-                .to = else_body_bb_id,
+                .from = pre_cond_bb_id,
+                .to = cond_else_bb_id,
             });
 
-            const auto post_if_else_bb_id = m_result_cfgs.back().add_bb();
+            const auto post_cond_bb_id = m_result_cfgs.back().add_bb();
 
             m_pending_links.push({
-                .from = if_true_bb_id,
-                .to = post_if_else_bb_id,
+                .from = cond_else_bb_id,
+                .to = post_cond_bb_id,
             });
             m_pending_links.push({
-                .from = else_body_bb_id,
-                .to = post_if_else_bb_id,
+                .from = cond_if_bb_id,
+                .to = post_cond_bb_id,
             });
         } else {
             const auto post_if_body_bb_id = m_result_cfgs.back().add_bb();
@@ -580,11 +572,11 @@ namespace Minuet::IR::Convert {
                 .op = Op::meta_patch_jmp_else,
             });
             m_pending_links.push({
-                .from = if_true_bb_id,
+                .from = cond_if_bb_id,
                 .to = post_if_body_bb_id,
             });
             m_pending_links.push({
-                .from = pre_if_bb_id,
+                .from = pre_cond_bb_id,
                 .to = post_if_body_bb_id,
             });
         }
@@ -619,7 +611,6 @@ namespace Minuet::IR::Convert {
 
         // 1. Generate the check at the current block before the loop's body block... This will be repeated whenever control passes back here, matching what a while loop does.
         const auto pre_loop_bb_id = m_result_cfgs.back().bb_count() - 1;
-        const auto in_loop_bb_id = pre_loop_bb_id + 1;
 
         m_result_cfgs.back().get_newest_bb().value()->steps.emplace_back(
             OperNonary {
@@ -629,12 +620,6 @@ namespace Minuet::IR::Convert {
         m_result_cfgs.back().get_newest_bb().value()->steps.emplace_back(
             OperNonary {
                 .op = Op::nop,
-            }
-        );
-
-        m_result_cfgs.back().get_newest_bb().value()->steps.emplace_back(
-            OperNonary {
-                .op = Op::meta_save_patch_back,
             }
         );
 
@@ -653,26 +638,12 @@ namespace Minuet::IR::Convert {
         );
         m_result_cfgs.back().get_newest_bb().value()->steps.emplace_back(
             OperNonary {
-                .op = Op::meta_save_patch,
+                .op = Op::meta_mark_break,
             }
         );
-
-        /// NOTE: This code will help "reschedule" the jump_else patch to occur after the jump patch which returns to just before the loop check. The current patch is swapped down against the previous one.
-        m_result_cfgs.back().get_newest_bb().value()->steps.emplace_back(
-            OperNonary {
-                .op = Op::meta_shuffle_patch,
-            }
-        );
-
-        m_pending_links.emplace(Utils::BBLink {
-            .from = pre_loop_bb_id,
-            .to = in_loop_bb_id,
-        });
-
+        
         // 2. Emit the body block with an ending jump back to the check's beginning so that the control flow actually repeats...
-        if (!emit_stmt(wloop.body, source)) {
-            return false;
-        }
+        const auto in_loop_bb_id = emit_block(std::get<Syntax::Stmts::Block>(wloop.body->data), source);
 
         m_result_cfgs.back().get_newest_bb().value()->steps.emplace_back(
             OperUnary {
@@ -683,14 +654,16 @@ namespace Minuet::IR::Convert {
                 .op = Op::jump,
             }
         );
-        m_result_cfgs.back().get_newest_bb().value()->steps.emplace_back(
-            OperNonary {
-                .op = Op::meta_patch_jmp,
-            }
-        );
+        m_result_cfgs.back().get_newest_bb().value()->steps.emplace_back(OperNonary {
+            .op = Op::meta_mark_continue,
+        });
         m_pending_links.emplace(Utils::BBLink {
             .from = in_loop_bb_id,
             .to = pre_loop_bb_id,
+        });
+        m_pending_links.emplace(Utils::BBLink {
+            .from = pre_loop_bb_id,
+            .to = in_loop_bb_id,
         });
 
         const auto post_loop_bb_id = m_result_cfgs.back().add_bb();
@@ -702,18 +675,13 @@ namespace Minuet::IR::Convert {
         );
         m_result_cfgs.back().get_newest_bb().value()->steps.emplace_back(
             OperNonary {
-                .op = Op::meta_patch_jmp_else,
+                .op = Op::meta_end_while,
             }
         );
         m_pending_links.emplace(Utils::BBLink {
             .from = pre_loop_bb_id,
             .to = post_loop_bb_id,
         });
-        m_result_cfgs.back().get_newest_bb().value()->steps.emplace_back(
-            OperNonary {
-                .op = Op::meta_end_while,
-            }
-        );
 
         return true;
     }
@@ -733,16 +701,16 @@ namespace Minuet::IR::Convert {
         return true;
     }
 
-    auto ASTConversion::emit_block(const Syntax::Stmts::Block& block, std::string_view source) -> bool {
-        m_result_cfgs.back().add_bb();
+    auto ASTConversion::emit_block(const Syntax::Stmts::Block& block, std::string_view source) -> int {
+        auto bb_id = m_result_cfgs.back().add_bb();
 
         for (const auto& stmt : block.items) {
             if (!emit_stmt(stmt, source)) {
-                return false;
+                return -1;
             }
         }
 
-        return true;
+        return bb_id;
     }
 
     auto ASTConversion::emit_function(const Syntax::Stmts::Function& fun, std::string_view source) -> bool {
@@ -783,7 +751,7 @@ namespace Minuet::IR::Convert {
         }
 
         if (generation_ok) {
-            generation_ok = emit_stmt(fun.body, source);
+            generation_ok = emit_block(std::get<Syntax::Stmts::Block>(fun.body->data), source) != -1;
         }
 
         if (generation_ok) {
@@ -802,7 +770,7 @@ namespace Minuet::IR::Convert {
         if (auto func_p = std::get_if<Function>(&stmt->data); func_p) {
             return emit_function(*func_p, source);
         } else if (auto block_p = std::get_if<Block>(&stmt->data); block_p) {
-            return emit_block(*block_p, source);
+            return emit_block(*block_p, source) != -1;
         } else if (auto ret_p = std::get_if<Return>(&stmt->data); ret_p) {
             return emit_return(*ret_p, source);
         } else if (auto wloop_p = std::get_if<While>(&stmt->data); wloop_p) {

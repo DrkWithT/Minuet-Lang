@@ -21,21 +21,26 @@ namespace Minuet::Runtime {
         case FVTag::boolean:
             m_data.scalar_v ^= 0b1;
             return true;
+        case FVTag::val_ref:
+            return m_data.fv_p->negate();
         default:
             return false;
         }
     }
 
     auto FastValue::emplace_other(const FastValue& arg) & noexcept -> bool {        
-        if (tag() == FVTag::val_ref) {
+        const auto self_tag = tag();
+        const auto arg_tag = arg.tag();
+
+        if (self_tag == FVTag::val_ref && arg_tag == FVTag::val_ref) {
+            m_data.fv_p = arg.m_data.fv_p;
+            return true;
+        } else if (self_tag == FVTag::val_ref && arg_tag != FVTag::val_ref) {
             if (m_data.fv_p != nullptr) {
                 return m_data.fv_p->emplace_other(arg);
             }
-
             return false;
         }
-
-        const auto arg_tag = arg.tag();
 
         switch (arg_tag) {
         case FVTag::dud:
@@ -49,7 +54,9 @@ namespace Minuet::Runtime {
             m_data.dbl_v = arg.m_data.dbl_v;
             break;
         case FVTag::val_ref:
-            m_data.fv_p = arg.m_data.fv_p;
+            if (!emplace_other(*arg.m_data.fv_p)) {
+                return false;
+            }
             break;
         case FVTag::sequence:
         default:
@@ -64,7 +71,7 @@ namespace Minuet::Runtime {
     [[nodiscard]] auto FastValue::operator*(const FastValue& arg) & noexcept -> FastValue {
         const auto self_tag = tag();
 
-        if (self_tag != arg.tag()) {
+        if (self_tag != arg.tag() && self_tag != FVTag::val_ref) {
             return {};
         }
 
@@ -73,6 +80,8 @@ namespace Minuet::Runtime {
             return m_data.scalar_v * arg.m_data.scalar_v;
         case FVTag::flt64:
             return m_data.dbl_v * arg.m_data.dbl_v;
+        case FVTag::val_ref:
+            return m_data.fv_p->operator*(arg);
         default:
             return {};
         }
@@ -81,7 +90,7 @@ namespace Minuet::Runtime {
     [[nodiscard]] auto FastValue::operator/(const FastValue& arg) & -> FastValue {
         const auto self_tag = tag();
 
-        if (self_tag != arg.tag()) {
+        if (self_tag != arg.tag() && self_tag != FVTag::val_ref) {
             return {};
         }
 
@@ -98,6 +107,8 @@ namespace Minuet::Runtime {
             }
 
             return {};
+        case FVTag::val_ref:
+            return m_data.fv_p->operator/(arg);
         default:
             return {};
         }
@@ -106,7 +117,7 @@ namespace Minuet::Runtime {
     [[nodiscard]] auto FastValue::operator%(const FastValue& arg) & -> FastValue {
         const auto self_tag = tag();
 
-        if (self_tag != arg.tag()) {
+        if (self_tag != arg.tag() && self_tag != FVTag::val_ref) {
             return {};
         }
 
@@ -117,6 +128,8 @@ namespace Minuet::Runtime {
             }
 
             return {};
+        case FVTag::val_ref:
+            return m_data.fv_p->operator%(arg);
         default:
             return {};
         }
@@ -125,7 +138,7 @@ namespace Minuet::Runtime {
     [[nodiscard]] auto FastValue::operator+(const FastValue& arg) & noexcept -> FastValue {
         const auto self_tag = tag();
 
-        if (self_tag != arg.tag()) {
+        if (self_tag != arg.tag() && self_tag != FVTag::val_ref) {
             return {};
         }
 
@@ -134,6 +147,8 @@ namespace Minuet::Runtime {
             return m_data.scalar_v + arg.m_data.scalar_v;
         case FVTag::flt64:
             return m_data.dbl_v + arg.m_data.dbl_v;
+        case FVTag::val_ref:
+            return m_data.fv_p->operator+(arg);
         default:
             return {};
         }
@@ -142,7 +157,7 @@ namespace Minuet::Runtime {
     [[nodiscard]] auto FastValue::operator-(const FastValue& arg) & noexcept -> FastValue {
         const auto self_tag = tag();
 
-        if (self_tag != arg.tag()) {
+        if (self_tag != arg.tag() && self_tag != FVTag::val_ref) {
             return {};
         }
 
@@ -151,6 +166,8 @@ namespace Minuet::Runtime {
             return m_data.scalar_v - arg.m_data.scalar_v;
         case FVTag::flt64:
             return m_data.dbl_v - arg.m_data.dbl_v;
+        case FVTag::val_ref:
+            return m_data.fv_p->operator-(arg);
         default:
             return {};
         }
@@ -159,7 +176,7 @@ namespace Minuet::Runtime {
     auto FastValue::operator*=(const FastValue& arg) & noexcept -> FastValue& {
         const auto self_tag = tag();
 
-        if (self_tag != arg.tag()) {
+        if (self_tag != arg.tag() && self_tag != FVTag::val_ref) {
             m_data.dud = 0;
             m_tag = FVTag::dud;
 
@@ -173,6 +190,8 @@ namespace Minuet::Runtime {
         case FVTag::flt64:
             m_data.dbl_v *= arg.m_data.dbl_v;
             break;
+        case FVTag::val_ref:
+            return m_data.fv_p->operator*=(arg);
         default:
             m_data.dud = 0;
             m_tag = FVTag::dud;
@@ -185,7 +204,7 @@ namespace Minuet::Runtime {
     auto FastValue::operator/=(const FastValue& arg) & -> FastValue& {
         const auto self_tag = tag();
 
-        if (self_tag != arg.tag()) {
+        if (self_tag != arg.tag() && self_tag != FVTag::val_ref) {
             m_data.dud = 0;
             m_tag = FVTag::dud;
 
@@ -209,6 +228,8 @@ namespace Minuet::Runtime {
                 m_tag = FVTag::dud;
             }
             break;
+        case FVTag::val_ref:
+            return m_data.fv_p->operator/=(arg);
         default:
             m_data.dud = 0;
             m_tag = FVTag::dud;
@@ -221,7 +242,7 @@ namespace Minuet::Runtime {
     auto FastValue::operator%=(const FastValue& arg) & -> FastValue& {
         const auto self_tag = tag();
 
-        if (self_tag != arg.tag()) {
+        if (self_tag != arg.tag() && self_tag != FVTag::val_ref) {
             m_data.dud = 0;
             m_tag = FVTag::dud;
 
@@ -237,6 +258,8 @@ namespace Minuet::Runtime {
                 m_tag = FVTag::dud;
             }
             break;
+        case FVTag::val_ref:
+            return m_data.fv_p->operator%=(arg);
         default:
             m_data.dud = 0;
             m_tag = FVTag::dud;
@@ -249,7 +272,7 @@ namespace Minuet::Runtime {
     auto FastValue::operator+=(const FastValue& arg) & noexcept -> FastValue& {
         const auto self_tag = tag();
 
-        if (self_tag != arg.tag()) {
+        if (self_tag != arg.tag() && self_tag != FVTag::val_ref) {
             m_data.dud = 0;
             m_tag = FVTag::dud;
 
@@ -263,6 +286,8 @@ namespace Minuet::Runtime {
         case FVTag::flt64:
             m_data.dbl_v += arg.m_data.dbl_v;
             break;
+        case FVTag::val_ref:
+            return m_data.fv_p->operator+=(arg);
         default:
             m_data.dud = 0;
             m_tag = FVTag::dud;
@@ -275,7 +300,7 @@ namespace Minuet::Runtime {
     auto FastValue::operator-=(const FastValue& arg) & noexcept -> FastValue& {
         const auto self_tag = tag();
 
-        if (self_tag != arg.tag()) {
+        if (self_tag != arg.tag() && self_tag != FVTag::val_ref) {
             m_data.dud = 0;
             m_tag = FVTag::dud;
 
@@ -289,6 +314,8 @@ namespace Minuet::Runtime {
         case FVTag::flt64:
             m_data.dbl_v -= arg.m_data.dbl_v;
             break;
+        case FVTag::val_ref:
+            return m_data.fv_p->operator-=(arg);
         default:
             m_data.dud = 0;
             m_tag = FVTag::dud;
@@ -301,7 +328,7 @@ namespace Minuet::Runtime {
     [[nodiscard]] auto FastValue::operator==(const FastValue& arg) const& -> bool {
         const auto self_tag = tag();
 
-        if (self_tag != arg.tag()) {
+        if (self_tag != arg.tag() && self_tag != FVTag::val_ref) {
             return false;
         }
 
@@ -312,6 +339,10 @@ namespace Minuet::Runtime {
             return m_data.scalar_v == arg.m_data.scalar_v;
         case FVTag::flt64:
             return m_data.dbl_v == arg.m_data.dbl_v;
+        case FVTag::val_ref:
+            return m_data.fv_p->operator==(arg);
+        // case FVTag::sequence:
+        // break;
         default:
             break;
         }
@@ -322,7 +353,7 @@ namespace Minuet::Runtime {
     [[nodiscard]] auto FastValue::operator<(const FastValue& arg) const& -> bool {
         const auto self_tag = tag();
 
-        if (self_tag != arg.tag()) {
+        if (self_tag != arg.tag() && self_tag != FVTag::val_ref) {
             return false;
         }
 
@@ -331,6 +362,8 @@ namespace Minuet::Runtime {
             return m_data.scalar_v < arg.m_data.scalar_v;
         case FVTag::flt64:
             return m_data.dbl_v < arg.m_data.dbl_v;
+        case FVTag::val_ref:
+            return m_data.fv_p->operator<(arg);
         default:
             break;
         }
@@ -341,7 +374,7 @@ namespace Minuet::Runtime {
     [[nodiscard]] auto FastValue::operator>(const FastValue& arg) const& -> bool {
         const auto self_tag = tag();
 
-        if (self_tag != arg.tag()) {
+        if (self_tag != arg.tag() && self_tag != FVTag::val_ref) {
             return false;
         }
 
@@ -350,6 +383,8 @@ namespace Minuet::Runtime {
             return m_data.scalar_v > arg.m_data.scalar_v;
         case FVTag::flt64:
             return m_data.dbl_v > arg.m_data.dbl_v;
+        case FVTag::val_ref:
+            return m_data.fv_p->operator>(arg);
         default:
             break;
         }
@@ -360,7 +395,7 @@ namespace Minuet::Runtime {
     [[nodiscard]] auto FastValue::operator<=(const FastValue& arg) const& -> bool {
         const auto self_tag = tag();
 
-        if (self_tag != arg.tag()) {
+        if (self_tag != arg.tag() && self_tag != FVTag::val_ref) {
             return false;
         }
 
@@ -369,6 +404,8 @@ namespace Minuet::Runtime {
             return m_data.scalar_v <= arg.m_data.scalar_v;
         case FVTag::flt64:
             return m_data.dbl_v <= arg.m_data.dbl_v;
+        case FVTag::val_ref:
+            return m_data.fv_p->operator<=(arg);
         default:
             break;
         }
@@ -379,7 +416,7 @@ namespace Minuet::Runtime {
     [[nodiscard]] auto FastValue::operator>=(const FastValue& arg) const& -> bool {
         const auto self_tag = tag();
 
-        if (self_tag != arg.tag()) {
+        if (self_tag != arg.tag() && self_tag != FVTag::val_ref) {
             return false;
         }
 
@@ -388,6 +425,8 @@ namespace Minuet::Runtime {
             return m_data.scalar_v >= arg.m_data.scalar_v;
         case FVTag::flt64:
             return m_data.dbl_v >= arg.m_data.dbl_v;
+        case FVTag::val_ref:
+            return m_data.fv_p->operator>=(arg);
         default:
             break;
         }
@@ -404,7 +443,7 @@ namespace Minuet::Runtime {
         case FVTag::flt64:
             return std::format("{}", m_data.dbl_v);
         case FVTag::val_ref:
-            return std::format("{}", m_data.fv_p->to_string());
+            return std::format("ref(FastValue({}))", m_data.fv_p->to_string());
         case FVTag::sequence:
             return m_data.obj_p->to_string();
         case FVTag::dud:

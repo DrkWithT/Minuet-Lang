@@ -25,6 +25,7 @@ namespace Minuet::Runtime {
 
         virtual auto get_memory_score() const& noexcept -> std::size_t = 0;
         virtual auto get_tag() const& noexcept -> ObjectTag = 0;
+        virtual auto get_size() const& noexcept -> int = 0;
 
         // virtual auto size() const& noexcept -> int = 0;
         virtual auto push_value(FastValue arg) -> bool = 0;
