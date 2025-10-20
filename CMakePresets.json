@@ -8,7 +8,6 @@
         {
             "name": "local-debug-build",
             "generator": "Ninja",
-            "binaryDir": "${sourceDir}/build/debug",
             "cacheVariables": {
                 "CMAKE_EXPORT_COMPILE_COMMANDS": "ON",
                 "CMAKE_CXX_STANDARD": "23",
@@ -19,7 +18,6 @@
         {
             "name": "local-release-build",
             "generator": "Ninja",
-            "binaryDir": "${sourceDir}/build/release",
             "cacheVariables": {
                 "CMAKE_EXPORT_COMPILE_COMMANDS": "ON",
                 "CMAKE_CXX_STANDARD": "23",
@@ -30,7 +28,6 @@
         {
             "name": "local-profile-build",
             "generator": "Ninja",
-            "binaryDir": "${sourceDir}/build/release",
             "cacheVariables": {
                 "CMAKE_EXPORT_COMPILE_COMMANDS": "ON",
                 "CMAKE_CXX_STANDARD": "23",
