@@ -16,6 +16,7 @@ _Minuet_ is a small, Python & C inspired language for simple programs. Unlike sh
  - Requires a `main` function
 
 ### Other Documentation
+ - [Usage](./docs/usage.md)
  - [Grammar](/docs/grammar.md)
  - [VM](/docs/vm.md)
 
