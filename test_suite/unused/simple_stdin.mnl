@@ -1,0 +1,14 @@
+# test prompting of numbers #
+
+fun main: [] => {
+    def x = 0
+    def y = 0.0
+    
+    x = prompt_int()
+    y = prompt_float()
+
+    print(x)
+    print(y)
+
+    return 0
+}
