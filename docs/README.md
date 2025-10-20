@@ -20,10 +20,6 @@ _Minuet_ is a small, Python & C inspired language for simple programs. Unlike sh
  - [VM](/docs/vm.md)
 
 ### Roadmap
- - `0.4.0`: Add sequential object support (requires an object heap & hidden object references)
- - `0.4.1`: Fixes!
-   - Fix sequence opcodes if needed...
-   - Fix nested loops!
  - `0.5.0`: Add basic list support & operators for sequence containers
    - Add `*++`, `*--`, `++*`, `--*` operators for push/pop operations at back/front
  - `0.6.0`: Add lambda support.
