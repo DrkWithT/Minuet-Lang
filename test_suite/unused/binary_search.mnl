@@ -14,9 +14,6 @@ fun main: [] => {
         mid = (low + high) / 2
         temp = nums.mid
 
-        print(target)
-        print(temp)
-
         if temp == target {
             pos = mid
             break
