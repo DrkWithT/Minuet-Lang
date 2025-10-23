@@ -1,5 +1,7 @@
 # print some lists and tuples #
 
+import "./stdlib/stdio.mnl"
+
 fun main: [] => {
     def nums = [1, 2, 3]
     def mat_id = [[1, 0], [0, 1]]

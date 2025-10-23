@@ -1,5 +1,7 @@
 # test prompting of numbers #
 
+import "./stdlib/stdio.mnl"
+
 fun main: [] => {
     def x = 0
     def y = 0.0

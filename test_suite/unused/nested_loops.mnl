@@ -1,5 +1,7 @@
 # test nested while loops #
 
+import "./stdlib/stdio.mnl"
+
 fun loop_de_loop: [n] => {
     def i = 0
     def j = 0

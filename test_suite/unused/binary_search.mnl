@@ -1,5 +1,7 @@
 # search sorted tuple #
 
+import "./stdlib/stdio.mnl"
+
 fun main: [] => {
     def nums = [1, 2, 3, 4, 5]
     def target = 1
