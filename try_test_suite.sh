@@ -14,7 +14,7 @@ handle_suite_group() {
 
     for test_path in $tests
     do
-        ./build/src/minuetm $test_path;
+        ./build/src/minuetm run $test_path;
 
         if [[ $? -ne $check_status ]]; then
             echo "\033[1;31mFAILED on demo '$test_path'\033[0m";
