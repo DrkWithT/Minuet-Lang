@@ -1,0 +1,6 @@
+fun main: [] => {
+    def a = 1
+    a = b
+
+    return 0
+}

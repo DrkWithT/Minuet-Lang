@@ -1,0 +1,6 @@
+fun main: [] => {
+    def a = 42
+    420 = a
+
+    return 0
+}

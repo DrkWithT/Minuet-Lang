@@ -3,7 +3,7 @@
 import "./stdlib/stdio.mnl"
 
 fun main: [] => {
-    def foo = [1]
+    def foo = {1}
     def baz = foo.0
 
     print(baz)
