@@ -1,0 +1,11 @@
+fun foo: [x, y, z] => {
+    return x + y + z
+}
+
+fun main: [] => {
+    def a = foo(1, 2, 3)
+    def b = foo()
+    def c = bar()
+
+    return 0
+}

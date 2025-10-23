@@ -1,5 +1,0 @@
-# for import testing #
-
-fun square: [n] => {
-    return n * n
-}

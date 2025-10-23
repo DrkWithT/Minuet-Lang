@@ -3,6 +3,7 @@
 
 #include <cstdint>
 #include <optional>
+#include <string_view>
 #include "ir/steps.hpp"
 
 namespace Minuet::Semantics::Enums {
@@ -25,6 +26,7 @@ namespace Minuet::Semantics::Enums {
 
     [[nodiscard]] constexpr auto operator_to_ir_op(Operator oper) -> std::optional<IR::Steps::Op> {
         using IR::Steps::Op;
+
         switch (oper) {
         case Operator::negate:
             return Op::neg;
@@ -54,6 +56,72 @@ namespace Minuet::Semantics::Enums {
         case Operator::assign:
         default:
             return {};
+        }
+    }
+
+    [[nodiscard]] constexpr auto operator_name(Operator oper) -> std::string_view {
+        switch (oper) {
+        case Operator::negate:
+            return "-(negate)";
+        case Operator::mul:
+            return "*";
+        case Operator::div:
+            return "/";
+        case Operator::modulo:
+            return "%";
+        case Operator::add:
+            return "+";
+        case Operator::sub:
+            return "-";
+        case Operator::equality:
+            return "==";
+        case Operator::inequality:
+            return "!=";
+        case Operator::lesser:
+            return "<";
+        case Operator::greater:
+            return ">";
+        case Operator::at_most:
+            return "<=";
+        case Operator::at_least:
+            return ">=";
+        case Operator::access:
+            return ".";
+        case Operator::assign:
+            return "=";
+        default:
+            return {};
+        }
+    }
+
+    enum class EntityKinds : uint8_t {
+        anything,
+        primitive,
+        sequence_fixed,
+        sequence_flexible,
+        callable,
+    };
+
+    [[nodiscard]] constexpr auto entity_kinds_to_sv(EntityKinds kinds) noexcept -> std::string_view {
+        switch (kinds) {
+            case EntityKinds::anything: return "(any)";
+            case EntityKinds::primitive: return "primitive";
+            case EntityKinds::sequence_fixed: return "tuple";
+            case EntityKinds::sequence_flexible: return "list";
+            case EntityKinds::callable: default: return "callable";
+        }
+    }
+
+    enum class ValueGroup : uint8_t {
+        temporary,
+        locator,
+    };
+
+    [[nodiscard]] constexpr auto value_group_name(ValueGroup val_group) noexcept -> std::string_view {
+        switch (val_group) {
+            case ValueGroup::temporary: return "temporary";
+            case ValueGroup::locator: return "locator";
+            default: return "(unknown)";
         }
     }
 }

@@ -17,8 +17,6 @@ fun iter_fib: [n] => {
 fun main: [] => {
     def ans = iter_fib(40)
 
-    print(ans)
-
     if ans != 102334155 {
         return 1
     }

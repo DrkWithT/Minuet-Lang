@@ -21,12 +21,6 @@ _Minuet_ is a small, Python & C inspired language for simple programs. Unlike sh
  - [VM](/docs/vm.md)
 
 ### Roadmap
- - `0.4.3` **(WIP)**: Add better command line arg processing.
-   - Add robust argument parsing.
-   - Use dependency injection for adding interpreter commands.
- - `0.5.0`: Add simple semantic analysis:
-   - Detect undeclared variables
-   - Detect invalid assignments, calls, and non-list accesses
  - `0.6.0`: Add basic list support & operators for sequence containers
    - Add `*++`, `*--`, `++*`, `--*` operators for push/pop operations at back/front
  - `0.6.1`: Add simple bytecode optimization passes, following dependency injection.

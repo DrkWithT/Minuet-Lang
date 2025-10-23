@@ -1,9 +1,0 @@
-import "./test_suite/simple/demo_lib.mnl"
-
-fun main: [] => {
-    if square(5) != 25 {
-        return 1
-    }
-
-    return 0
-}

@@ -1,7 +1,6 @@
 #ifndef MINUET_DRIVER_HPP
 #define MINUET_DRIVER_HPP
 
-#include <vector>
 #include <optional>
 #include <filesystem>
 #include "frontend/lexing.hpp"
@@ -23,6 +22,8 @@ namespace Minuet::Driver {
         /// TODO: refactor to return full program AST from traversing includes.
         [[nodiscard]] auto parse_sources(const std::filesystem::path& main_path) -> std::optional<Syntax::AST::FullAST>;
 
+        [[nodiscard]] auto check_semantics(const Syntax::AST::FullAST& ast) -> bool;
+
         [[maybe_unused]] auto generate_ir(const Syntax::AST::FullAST& ast) -> std::optional<IR::CFG::FullIR>;
 
         [[maybe_unused]] auto generate_program(IR::CFG::FullIR& ir) -> std::optional<Runtime::Code::Program>;
@@ -34,7 +35,7 @@ namespace Minuet::Driver {
 
     private:
         Frontend::Lexing::Lexer m_lexer;
-        std::vector<std::string> m_src_map;
+        std::unordered_map<uint32_t, std::string> m_src_map;
         Runtime::NativeProcTable m_native_procs;
         Runtime::NativeProcRegistry m_native_proc_ids;
         std::unique_ptr<Plugins::Printer> m_ir_printer;

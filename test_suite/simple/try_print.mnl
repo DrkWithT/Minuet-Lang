@@ -1,6 +1,6 @@
 # native print numbers #
 
-native fun print: [arg]
+import "./stdlib/stdio.mnl"
 
 fun main: [] => {
     print(42)

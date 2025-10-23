@@ -1,5 +1,7 @@
 # sum from 1 to N by loop #
 
+import "./stdlib/stdio.mnl"
+
 fun sumLoop: [n] => {
     def count = n
     def ans = 0
@@ -15,11 +17,11 @@ fun sumLoop: [n] => {
 fun main: [] => {
     def ans = sumLoop(10)
 
+    print(ans)
+
     if ans != 55 {
         return 1
     }
-
-    print(ans)
 
     return 0
 }
