@@ -4,6 +4,7 @@
 #include <memory>
 #include <iostream>
 
+#include "semantics/analyzer.hpp"
 #include "ir/convert_ast.hpp"
 #include "codegen/emitter.hpp"
 #include "runtime/vm.hpp"
@@ -99,7 +100,7 @@ namespace Minuet::Driver {
 
             std::string src_text {read_source(next_src_path)};
 
-            m_src_map.push_back(src_text);
+            m_src_map[temp_src_id] = src_text;
             m_lexer.reset_with_src(src_text);
 
             {
@@ -123,6 +124,12 @@ namespace Minuet::Driver {
         }
 
         return full_ast;
+    }
+
+    auto Driver::check_semantics(const Syntax::AST::FullAST& ast) -> bool {
+        Semantics::Analyzer analyzer;
+
+        return analyzer(ast, m_src_map);
     }
 
     auto Driver::generate_ir(const FullAST& ast) -> std::optional<FullIR> {
@@ -155,6 +162,10 @@ namespace Minuet::Driver {
         auto parsed_program = parse_sources(entry_source_path);
 
         if (!parsed_program) {
+            return false;
+        }
+
+        if (!check_semantics(parsed_program.value())) {
             return false;
         }
 

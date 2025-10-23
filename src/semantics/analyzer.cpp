@@ -8,37 +8,35 @@ namespace Minuet::Semantics {
     using Enums::operator_name;
 
 
-    void Analyzer::report_error(const std::string& msg, const std::string& source, int area_begin, int area_end) {
-        const auto error_n = m_error_count + 1;
-        std::string_view src_sv {source};
+    auto SemanticItem::to_lvalue() const noexcept -> SemanticItem {
+        return {
+            .extra = this->extra,
+            .entity_kind = this->entity_kind,
+            .value_group = Enums::ValueGroup::locator,
+            .readonly = false,
+        };
+    }
 
-        std::println(std::cerr, "\033[1;31mSemantic Error {}\033[0m [In scope '{}']: {}\n{}\n", error_n, m_scopes.back().name, msg, src_sv.substr(area_begin, area_end - area_begin + 1));
-        ++m_error_count;
+
+    void Analyzer::report_error(const std::string& msg, const std::string& source, int area_begin, int area_end) {
+        std::string_view src_sv {source};
+        
+        std::println(std::cerr, "\033[1;31mSemantic Error\033[0m [In scope '{}']: {}\n{}\n", m_scopes.back().name, msg, src_sv.substr(area_begin, area_end - area_begin));
     }
 
     void Analyzer::report_error(int line, const std::string& msg) {
-        const auto error_n = m_error_count + 1;
-
-        std::println(std::cerr, "\033[1;31mSemantic Error {}\033[0m [In scope '{}', ln {}]: {}", error_n, m_scopes.back().name, line, msg);
-        ++m_error_count;
+        std::println(std::cerr, "\033[1;31mSemantic Error\033[0m [In scope '{}', ln {}]: {}",  m_scopes.back().name, line, msg);
     }
 
-    void Analyzer::report_error(const Frontend::Lexicals::Token& culprit, const std::string& msg, const std::string& source, int area_begin, int area_end) {
+    void Analyzer::report_error(const Frontend::Lexicals::Token& culprit, const std::string& msg, const std::string& source) {
         const auto& [type, culprit_start, culprit_end, line, column] = culprit;
-        const auto error_n = m_error_count + 1;
         std::string_view src_sv {source};
 
         // 1. print error header as context of following source snippet...
-        std::println(std::cerr, "\033[1;31mSemantic Error {}\033[0m [In scope '{}', ln {}, col {}]: {}\n", error_n, m_scopes.back().name, line, column, msg);
-
-        std::println(std::cerr, "{}", src_sv.substr(area_begin, culprit_start - area_begin + 1)); // pre-culprit
+        std::println(std::cerr, "\033[1;31mSemantic Error\033[0m [In scope '{}', ln {}, col {}]: {}\n", m_scopes.back().name, line, column, msg);
 
         // 2. color bad token for ease of notice
-        std::print(std::cerr, "\033[1;31m{}\033[0m", token_to_sv(culprit, src_sv));
-
-        std::println("{}", src_sv.substr(culprit_end, area_end - culprit_end + 1));
-
-        ++m_error_count;
+        std::print(std::cerr, "\033[1;33mCulprit\033[0m: '{}'", token_to_sv(culprit, src_sv));
     }
 
     void Analyzer::enter_scope(const std::string& name_str) {
@@ -53,8 +51,8 @@ namespace Minuet::Semantics {
     }
 
     auto Analyzer::lookup_named_item(const std::string& name) const& noexcept -> std::optional<SemanticItem> {
-        for (auto temp_scope = m_scopes.crbegin(), dud_scope = m_scopes.crend(); temp_scope != dud_scope; ++temp_scope) {
-            if (const auto& entry_opt = temp_scope->items.find(name); entry_opt != temp_scope->items.cend()) {
+        for (int scope_idx = m_scopes.size() - 1; scope_idx >= 0; --scope_idx) {
+            if (const auto& entry_opt = m_scopes[scope_idx].items.find(name); entry_opt != m_scopes[scope_idx].items.cend()) {
                 return entry_opt->second;
             }
         }
@@ -128,7 +126,7 @@ namespace Minuet::Semantics {
         })();
 
         if (!result_info) {
-            report_error(literal_token, "Undeclared name!", source, expr.token.start, expr.token.end);
+            report_error(literal_token, "Undeclared name!", source);
         }
 
         return result_info;
@@ -275,7 +273,7 @@ namespace Minuet::Semantics {
             return {};
         }
 
-        const auto& target_info = target_info_opt.value();
+        const auto target_info = target_info_opt.value();
 
         if (!check_assignability(target_info)) {
             report_error("LHS is not assignable.", source, expr.left->src_begin, expr.value->src_end + 1);
@@ -318,7 +316,7 @@ namespace Minuet::Semantics {
     }
 
     auto Analyzer::check_local_def(const Syntax::Stmts::LocalDef& stmt, const std::string& source) noexcept -> bool {
-        std::string var_name = source.substr(stmt.name.start, stmt.name.end);
+        std::string var_name = source.substr(stmt.name.start, token_length(stmt.name));
 
         auto var_initializer_opt = check_expr(stmt.init_expr, source);
 
@@ -326,7 +324,7 @@ namespace Minuet::Semantics {
             return false;
         }
 
-        if (!record_named_item(var_name, var_initializer_opt.value())) {
+        if (!record_named_item(var_name, var_initializer_opt.value().to_lvalue())) {
             report_error(stmt.name.line, std::format("Illegal redeclaration of variable '{}'.", var_name));
 
             return false;
@@ -404,7 +402,7 @@ namespace Minuet::Semantics {
         enter_scope(fn_name);
 
         for (const auto& param_decl : stmt.params) {
-            if (std::string param_name = source.substr(param_decl.start, param_decl.end); !record_named_item(param_name, SemanticItem {
+            if (std::string param_name = source.substr(param_decl.start, token_length(param_decl)); !record_named_item(param_name, SemanticItem {
                 .extra = {},
                 .entity_kind = Enums::EntityKinds::anything,
                 .value_group = Enums::ValueGroup::locator,
@@ -426,7 +424,25 @@ namespace Minuet::Semantics {
         return true;
     }
 
-    auto Analyzer::check_native_stub([[maybe_unused]] const Syntax::Stmts::NativeStub& stmt, [[maybe_unused]] const std::string& source) noexcept -> bool {
+    auto Analyzer::check_native_stub(const Syntax::Stmts::NativeStub& stmt, const std::string& source) noexcept -> bool {
+        if (!m_prepassing) {
+            return true;
+        }
+
+        std::string fn_name = source.substr(stmt.name.start, token_length(stmt.name));
+        const auto fn_arity = static_cast<int>(stmt.params.size());
+
+        if (!record_named_item(fn_name, SemanticItem {
+            .extra = fn_arity,
+            .entity_kind = Enums::EntityKinds::callable,
+            .value_group = Enums::ValueGroup::locator,
+            .readonly = true,
+        })) {
+            report_error(stmt.name.line, "Redefinition of native function disallowed.");
+
+            return false;
+        }
+
         return true;
     }
 
@@ -462,9 +478,9 @@ namespace Minuet::Semantics {
 
 
     Analyzer::Analyzer()
-    : m_scopes {}, m_error_count {0}, m_prepassing {true} {}
+    : m_scopes {}, m_prepassing {true} {}
 
-    auto Analyzer::operator()(const Syntax::AST::FullAST& ast, const std::vector<std::string>& src_map) -> bool {
+    auto Analyzer::operator()(const Syntax::AST::FullAST& ast, const std::unordered_map<uint32_t, std::string>& src_map) -> bool {
         enter_scope("global");
 
         for (const auto& [decl_ast, src_id] : ast) {

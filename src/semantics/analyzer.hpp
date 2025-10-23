@@ -22,6 +22,8 @@ namespace Minuet::Semantics {
         Enums::EntityKinds entity_kind;
         Enums::ValueGroup value_group;
         bool readonly;
+
+        auto to_lvalue() const noexcept -> SemanticItem;
     };
 
     struct Scope {
@@ -40,7 +42,6 @@ namespace Minuet::Semantics {
             {false, false, false, false, false, false, false, false, false, false, false, false, false, true}, // lookups for callable
         };
         std::vector<Scope> m_scopes;
-        int m_error_count;
         bool m_prepassing;
 
         /// NOTE: for simple errors which consider an area of code.
@@ -50,7 +51,7 @@ namespace Minuet::Semantics {
         void report_error(int line, const std::string& msg);
 
         /// NOTE: for more complex errors needing the offending token's information.
-        void report_error(const Frontend::Lexicals::Token& culprit, const std::string& msg, const std::string& source, int area_begin, int area_end);
+        void report_error(const Frontend::Lexicals::Token& culprit, const std::string& msg, const std::string& source);
 
         void enter_scope(const std::string& name_str);
         void leave_scope();
@@ -92,7 +93,7 @@ namespace Minuet::Semantics {
     public:
         Analyzer();
 
-        [[nodiscard]] auto operator()(const Syntax::AST::FullAST& ast, const std::vector<std::string>& src_map) -> bool;
+        [[nodiscard]] auto operator()(const Syntax::AST::FullAST& ast, const std::unordered_map<uint32_t, std::string>& src_map) -> bool;
     };
 }
 

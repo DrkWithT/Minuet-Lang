@@ -35,7 +35,7 @@ namespace Minuet::IR::Convert {
     public:
         ASTConversion(const Runtime::NativeProcRegistry* native_proc_ids);
 
-        [[nodiscard]] auto operator()(const Syntax::AST::FullAST& src_mapped_ast, const std::vector<std::string>& source_map) -> std::optional<CFG::FullIR>;
+        [[nodiscard]] auto operator()(const Syntax::AST::FullAST& src_mapped_ast, const std::unordered_map<uint32_t, std::string>& source_map) -> std::optional<CFG::FullIR>;
 
     private:
         void report_error(std::string_view msg_c_str);

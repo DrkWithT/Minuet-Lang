@@ -30,7 +30,7 @@ namespace Minuet::IR::Convert {
     ASTConversion::ASTConversion(const Runtime::NativeProcRegistry* native_proc_ids)
     : m_globals {}, m_locals {}, m_pending_links {}, m_result_cfgs {}, m_proto_consts {}, m_native_proc_ids {native_proc_ids}, m_proto_main_id {-1}, m_error_count {0}, m_next_func_aa {0}, m_next_local_aa {0}, m_prepassing {true} {}
 
-    auto ASTConversion::operator()(const Syntax::AST::FullAST& src_mapped_ast, const std::vector<std::string>& source_map) -> std::optional<FullIR> {
+    auto ASTConversion::operator()(const Syntax::AST::FullAST& src_mapped_ast, const std::unordered_map<uint32_t, std::string>& source_map) -> std::optional<FullIR> {
         // 1. Prepass top-level definitions of functions, etc. to avoid forward declaration jank.
         for (const auto& [ast, ast_src_id] : src_mapped_ast) {
             if (!emit_stmt(ast, source_map.at(ast_src_id))) {
