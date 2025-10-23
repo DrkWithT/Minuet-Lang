@@ -257,6 +257,15 @@ namespace Minuet::Semantics {
             return {};
         }
 
+        if (has_special_access_case) {
+            return SemanticItem {
+                .extra = DudAttr {},
+                .entity_kind = EntityKinds::anything,
+                .value_group = Enums::ValueGroup::locator,
+                .readonly = false,
+            };
+        }
+
         return SemanticItem {
             .extra = {},
             .entity_kind = Enums::EntityKinds::anything,
