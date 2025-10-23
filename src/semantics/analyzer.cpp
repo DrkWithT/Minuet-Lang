@@ -36,7 +36,7 @@ namespace Minuet::Semantics {
         std::println(std::cerr, "\033[1;31mSemantic Error\033[0m [In scope '{}', ln {}, col {}]: {}\n", m_scopes.back().name, line, column, msg);
 
         // 2. color bad token for ease of notice
-        std::print(std::cerr, "\033[1;33mCulprit\033[0m: '{}'", token_to_sv(culprit, src_sv));
+        std::println(std::cerr, "\033[1;33mCulprit\033[0m: '{}'", token_to_sv(culprit, src_sv));
     }
 
     void Analyzer::enter_scope(const std::string& name_str) {
