@@ -7,7 +7,7 @@
 #include "ir/steps.hpp"
 #include "ir/cfg.hpp"
 #include "runtime/bytecode.hpp"
-#include "codegen/emitter.hpp"
+#include "bcgen/emitter.hpp"
 
 namespace Minuet::Codegen {
     using IR::Steps::Op;
@@ -53,8 +53,6 @@ namespace Minuet::Codegen {
                 case AbsAddrTag::immediate: return ArgMode::immediate;
                 case AbsAddrTag::constant: return ArgMode::constant;
                 case AbsAddrTag::temp: return ArgMode::reg;
-                case AbsAddrTag::stack:
-                case AbsAddrTag::heap:
                 default: return {};
             }
         })(aa_tag);
