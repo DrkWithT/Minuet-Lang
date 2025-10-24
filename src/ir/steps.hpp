@@ -50,8 +50,7 @@ namespace Minuet::IR::Steps {
         immediate,
         constant,
         temp,
-        stack,
-        heap,
+        // stack,
         last,
     };
 
@@ -60,6 +59,10 @@ namespace Minuet::IR::Steps {
     struct AbsAddress {
         AbsAddrTag tag;
         int16_t id;
+
+        [[nodiscard]] friend constexpr auto operator==(AbsAddress lhs, AbsAddress rhs) noexcept {
+            return lhs.tag == rhs.tag && lhs.id == rhs.id;
+        }
     };
 
     struct TACUnary {

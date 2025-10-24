@@ -44,8 +44,7 @@ namespace Minuet::IR::Steps {
         "immediate",
         "constant",
         "temp",
-        "stack",
-        "heap",
+        // "stack",
     };
 
     auto ir_op_name(Op op) noexcept -> std::string_view {
