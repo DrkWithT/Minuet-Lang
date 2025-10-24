@@ -21,7 +21,7 @@ namespace Minuet::Semantics {
     void Analyzer::report_error(const std::string& msg, const std::string& source, int area_begin, int area_end) {
         std::string_view src_sv {source};
         
-        std::println(std::cerr, "\033[1;31mSemantic Error\033[0m [In scope '{}']: {}\n{}\n", m_scopes.back().name, msg, src_sv.substr(area_begin, area_end - area_begin));
+        std::println(std::cerr, "\033[1;31mSemantic Error\033[0m [In scope '{}']: {}\n{}\n", m_scopes.back().name, msg, src_sv.substr(area_begin, area_end - area_begin + 1));
     }
 
     void Analyzer::report_error(int line, const std::string& msg) {
@@ -492,6 +492,7 @@ namespace Minuet::Semantics {
     auto Analyzer::operator()(const Syntax::AST::FullAST& ast, const std::unordered_map<uint32_t, std::string>& src_map) -> bool {
         enter_scope("global");
 
+        /// TODO: fix invalid access on src_map: source 2 does not push to it...
         for (const auto& [decl_ast, src_id] : ast) {
             if (!check_stmt(decl_ast, src_map.at(src_id))) {
                 return false;

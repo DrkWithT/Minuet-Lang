@@ -707,14 +707,14 @@ namespace Minuet::Frontend::Parsing {
         auto import_target_token = m_previous;
         std::string raw_target_str = std::format("{}", token_to_sv(import_target_token, src));
 
-        ++src_counter;
-
         const auto target_src_id = src_counter;
 
         pending_srcs.push({
             .file_path = {raw_target_str},
             .src_id = target_src_id,
         });
+
+        ++src_counter;
 
         return std::make_unique<Stmt>(Syntax::Stmts::Import {
             .target = import_target_token,

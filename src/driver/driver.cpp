@@ -89,6 +89,8 @@ namespace Minuet::Driver {
             .src_id = temp_src_id,
         });
 
+        ++temp_src_id;
+
         while (!sources_frontier.empty()) {
             const auto [next_src_path, next_src_id] = sources_frontier.top();
 
@@ -100,7 +102,7 @@ namespace Minuet::Driver {
 
             std::string src_text {read_source(next_src_path)};
 
-            m_src_map[temp_src_id] = src_text;
+            m_src_map[next_src_id] = src_text;
             m_lexer.reset_with_src(src_text);
 
             {
