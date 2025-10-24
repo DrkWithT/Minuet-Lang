@@ -1,0 +1,21 @@
+# test stdlib list funcs #
+
+import "./stdlib/stdio.mnl"
+import "./stdlib/lists.mnl"
+
+fun main: [] => {
+    def nums = {1, 2, 3}
+
+    def front_n = list_pop_front(nums)
+    def last_n = list_pop_back(nums)
+    def nums_ref = list_push_back(nums, 4)
+
+    def temp = [6, 8]
+    list_concat(nums_ref, temp)
+
+    print(front_n)
+    print(last_n)
+    print(nums)
+
+    return 0
+}
