@@ -22,11 +22,12 @@ namespace Minuet::Runtime {
     public:
         SequenceValue();
 
-        [[nodiscard]] auto items() noexcept -> std::vector<FastValue>&;
+        [[nodiscard]] auto items() noexcept -> std::vector<FastValue>& override;
 
         [[nodiscard]] auto get_memory_score() const& noexcept -> std::size_t override;
         [[nodiscard]] auto get_tag() const& noexcept -> ObjectTag override;
         [[nodiscard]] auto get_size() const& noexcept -> int override;
+        [[nodiscard]] auto is_frozen() const& noexcept -> bool override;
 
         [[nodiscard]] auto push_value(FastValue arg) -> bool override;
         [[nodiscard]] auto pop_value(SequenceOpPolicy mode) -> FastValue override;

@@ -8,7 +8,7 @@
 #include "driver/plugins/ir_dumper.hpp"
 
 constexpr auto minuet_version_major = 0;
-constexpr auto minuet_version_minor = 5;
+constexpr auto minuet_version_minor = 6;
 constexpr auto minuet_version_patch = 0;
 
 
@@ -81,7 +81,12 @@ int main(int argc, char* argv[]) {
     app.register_native_proc({"print", Intrinsics::native_print_value});
     app.register_native_proc({"prompt_int", Intrinsics::native_prompt_int});
     app.register_native_proc({"prompt_float", Intrinsics::native_prompt_float});
+
     app.register_native_proc({"len_of", Intrinsics::native_len_of});
+    app.register_native_proc({"list_push_back", Intrinsics::native_list_push_back});
+    app.register_native_proc({"list_pop_back", Intrinsics::native_list_pop_back});
+    app.register_native_proc({"list_pop_front", Intrinsics::native_list_pop_front});
+    app.register_native_proc({"list_concat", Intrinsics::native_list_concat});
 
     return app(arg_2) ? 0 : 1 ;
 }

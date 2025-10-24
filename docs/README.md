@@ -21,8 +21,9 @@ _Minuet_ is a small, Python & C inspired language for simple programs. Unlike sh
  - [VM](/docs/vm.md)
 
 ### Roadmap
- - `0.6.0`: Add basic list support & operators for sequence containers
-   - Add `*++`, `*--`, `++*`, `--*` operators for push/pop operations at back/front
+ - `0.6.0`: Add basic list operations...
+   - Add list intrinsics to push or pop at either end.
+     - `list_push_back(list, arg)`, `list_pop_back(list)`, `list_pop_front(list)`, `list_concat(list, [args...])`
  - `0.6.1`: Add simple bytecode optimization passes, following dependency injection.
    - Unused variable elimination
    - Reduction of useless `mov` and `nop` instructions

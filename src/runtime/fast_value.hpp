@@ -3,6 +3,7 @@
 
 #include <cstdint>
 #include <optional>
+#include <vector>
 #include <string>
 
 namespace Minuet::Runtime {
@@ -26,6 +27,7 @@ namespace Minuet::Runtime {
         virtual auto get_memory_score() const& noexcept -> std::size_t = 0;
         virtual auto get_tag() const& noexcept -> ObjectTag = 0;
         virtual auto get_size() const& noexcept -> int = 0;
+        virtual auto is_frozen() const& noexcept -> bool = 0;
 
         // virtual auto size() const& noexcept -> int = 0;
         virtual auto push_value(FastValue arg) -> bool = 0;
@@ -34,6 +36,7 @@ namespace Minuet::Runtime {
         virtual auto get_value(std::size_t pos) -> std::optional<FastValue*> = 0;
 
         virtual void freeze() noexcept = 0;
+        virtual auto items() noexcept -> std::vector<FastValue>& = 0;
 
         virtual auto as_fast_value() noexcept -> FastValue = 0;
         virtual auto to_string() const& noexcept -> std::string = 0;

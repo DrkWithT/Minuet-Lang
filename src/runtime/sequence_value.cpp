@@ -24,6 +24,10 @@ namespace Minuet::Runtime {
         return m_length;
     }
 
+    auto SequenceValue::is_frozen() const& noexcept -> bool {
+        return m_frozen;
+    }
+
     auto SequenceValue::push_value(FastValue arg) -> bool {
         m_items.emplace_back(std::move(arg));
         ++m_length;

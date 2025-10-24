@@ -1,3 +1,7 @@
 # lists - list operations #
 
 native fun len_of: [arg]
+native fun list_push_back: [dest, arg]
+native fun list_pop_back: [dest]
+native fun list_pop_front: [dest]
+native fun list_concat: [dest, src]
