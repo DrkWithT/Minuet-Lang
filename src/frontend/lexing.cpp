@@ -163,17 +163,20 @@ namespace Minuet::Frontend::Lexing {
         const auto temp_ln = m_line;
         const auto temp_col = m_col;
         auto dots = 0;
+        auto minuses = 0;
 
         while (!at_eof()) {
             const auto c = sv[m_pos];
 
-            if (!Helpers::match_numeric(c)) {
+            if (!Helpers::match_numeric(c) && c != '-') {
                 --temp_end;
                 break;
             }
 
             if (c == '.') {
                 ++dots;
+            } else if (c == '-') {
+                ++minuses;
             }
 
             update_src_location(c);
@@ -181,13 +184,17 @@ namespace Minuet::Frontend::Lexing {
             ++temp_end;
         }
 
-        const auto checked_tag = ([](int dot_count) {
+        const auto checked_tag = ([](int dot_count, int minus_count) {
+            if (minus_count > 1) {
+                return Lexicals::TokenType::unknown;
+            }
+
             switch (dot_count) {
                 case 0: return Lexicals::TokenType::literal_int;
                 case 1: return Lexicals::TokenType::literal_double;
                 default: return Lexicals::TokenType::unknown;
             }
-        })(dots);
+        })(dots, minuses);
 
         return Lexicals::Token {
             .type = checked_tag,

@@ -9,7 +9,7 @@ fun main: [] => {
     def low = 0
     def high = 4
     def mid = 0
-    def pos = (0 - 1)
+    def pos = -1
     def temp = 0
 
     while low < high {
@@ -30,7 +30,7 @@ fun main: [] => {
 
     print(pos)
 
-    if pos == (0 - 1) {
+    if pos == -1 {
         return 1
     }
 
