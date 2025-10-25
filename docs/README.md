@@ -21,7 +21,9 @@ _Minuet_ is a small, Python & C inspired language for simple programs. Unlike sh
  - [VM](/docs/vm.md)
 
 ### Roadmap
- - `0.6.1`: Add simple bytecode optimization passes, following dependency injection.
+ - `0.6.2`: Fuse separate condition `MOV`s & their conditional jumps.
+   - Example: `jump_eq <IP> <LHS> <RHS>`
+ - `0.6.3`: Add simple bytecode optimization passes, following dependency injection.
    - Unused variable elimination
    - Reduction of useless `mov` and `nop` instructions
    - Dead branch elimination
