@@ -29,6 +29,7 @@ namespace Minuet::Frontend::Lexing {
         }
 
         const auto peek_0 = sv[m_pos];
+        const auto peek_1 = sv[m_pos + 1];
 
         if (Helpers::match_spaces(peek_0)) {
             return lex_spaces(sv);
@@ -53,7 +54,7 @@ namespace Minuet::Frontend::Lexing {
 
         if (Helpers::match_alpha(peek_0)) {
             return lex_word(sv);
-        } else if (Helpers::match_digit(peek_0)) {
+        } else if (Helpers::match_digit(peek_0) || (peek_0 == '-' && Helpers::match_digit(peek_1))) {
             return lex_numeric(sv);
         } else if (Helpers::match_operator(peek_0)) {
             return lex_operator(sv);
