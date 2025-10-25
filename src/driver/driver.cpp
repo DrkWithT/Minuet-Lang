@@ -6,9 +6,8 @@
 
 #include "semantics/analyzer.hpp"
 #include "ir/convert_ast.hpp"
-#include "codegen/emitter.hpp"
+#include "bcgen/emitter.hpp"
 #include "runtime/vm.hpp"
-#include "driver/plugins/tac_condenser.hpp"
 #include "driver/sources.hpp"
 #include "driver/driver.hpp"
 
@@ -147,17 +146,17 @@ namespace Minuet::Driver {
         return ir_opt.value();
     }
 
-    auto Driver::apply_ir_transforms(IR::CFG::FullIR& ir) -> bool {
-        Plugins::TACCondenser prune_assignments;
+    // auto Driver::apply_ir_transforms(IR::CFG::FullIR& ir) -> bool {
+    //     Plugins::TACCondenser prune_assignments;
 
-        for (auto& cfg : ir.cfg_list) {
-            if (!prune_assignments.apply(cfg)) {
-                return false;
-            }
-        }
+    //     for (auto& cfg : ir.cfg_list) {
+    //         if (!prune_assignments.apply(cfg)) {
+    //             return false;
+    //         }
+    //     }
 
-        return true;
-    }
+    //     return true;
+    // }
 
     [[maybe_unused]] auto Driver::generate_program(IR::CFG::FullIR& ir) -> std::optional<Runtime::Code::Program> {
         Codegen::Emitter emitter;
@@ -194,9 +193,9 @@ namespace Minuet::Driver {
 
         m_ir_printer->operator()(&program_ir);
 
-        if (!apply_ir_transforms(program_ir)) {
-            return false;
-        }
+        // if (!apply_ir_transforms(program_ir)) {
+        //     return false;
+        // }
 
         auto program_opt = generate_program(program_ir);
 
