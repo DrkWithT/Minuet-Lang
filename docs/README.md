@@ -21,9 +21,6 @@ _Minuet_ is a small, Python & C inspired language for simple programs. Unlike sh
  - [VM](/docs/vm.md)
 
 ### Roadmap
- - `0.6.2`: Remove the need for an `RFV` register.
-   - Conditional jumps take a register value argument.
-   - The VM should have the `RFV` register removed.
  - `0.7.0`: Add dictionaries
  - `0.8.0`: Add strings
    - `String` type

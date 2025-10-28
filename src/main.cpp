@@ -9,7 +9,7 @@
 
 constexpr auto minuet_version_major = 0;
 constexpr auto minuet_version_minor = 6;
-constexpr auto minuet_version_patch = 0;
+constexpr auto minuet_version_patch = 2;
 
 
 using namespace Minuet;
