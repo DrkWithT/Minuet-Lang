@@ -357,13 +357,13 @@ namespace Minuet::IR::Convert {
 
         for (int16_t arg_idx = 0; arg_idx < real_args_n; ++arg_idx) {
             if (auto arg_aa_opt = emit_expr(call.args.at(arg_idx), source); arg_aa_opt) {
-                const auto arg_dest = gen_temp_aa().value();
-
-                m_result_cfgs.back().get_newest_bb().value()->steps.emplace_back(TACUnary {
-                    .dest = arg_dest,
-                    .arg_0 = arg_aa_opt.value(),
-                    .op = Op::nop,
-                });
+                if (auto arg_dest_aa = gen_temp_aa(); arg_dest_aa) {
+                    m_result_cfgs.back().get_newest_bb().value()->steps.emplace_back(TACUnary {
+                        .dest = arg_dest_aa.value(),
+                        .arg_0 = arg_aa_opt.value(),
+                        .op = Op::nop,
+                    });
+                }
 
                 continue;
             }
@@ -480,12 +480,12 @@ namespace Minuet::IR::Convert {
      * @return false
      */
     auto ASTConversion::emit_if(const Syntax::Stmts::If& cond, std::string_view source) -> bool {
-        // Case 1:
-        //     (Pre-Block)-*
-        //     |           |
-        //     (T-Block)   (F-Block)
-        //             |          |
-        //             (Post-Block)
+        // Case 1: (the traversal order cannot have duplicating forward edges for correct emission: T-Block to Post-Block)
+        //     (Pre-Block)----*
+        //         |          |
+        //     (T-Block)  (F-Block)
+        //         |          |
+        //         x --- (Post-Block)
         // Case 2:
         //     (Pre-Block)-*
         //     |           |
@@ -496,21 +496,26 @@ namespace Minuet::IR::Convert {
         /// 1: handle the initial basic block- here, the if-stmt check is done before the actual branching by JUMP_ELSE... that instruction pops off a boolean and then jumps if the boolean is false.
         const auto pre_cond_bb_id = m_result_cfgs.back().bb_count() - 1;
 
+        m_result_cfgs.back().get_newest_bb().value()->steps.emplace_back(OperNonary {
+            .op = Op::meta_begin_if_else,
+        });
+
         auto cond_result_aa = emit_expr(cond.cond_expr, source);
 
         if (!cond_result_aa) {
             return false;
         }
 
-        m_result_cfgs.back().get_newest_bb().value()->steps.emplace_back(OperUnary {
-            .arg_0 = {
+        m_result_cfgs.back().get_newest_bb().value()->steps.emplace_back(OperBinary {
+            .arg_0 = cond_result_aa.value(),
+            .arg_1 = {
                 .id = 0,
                 .tag = AbsAddrTag::immediate,
             },
             .op = Op::jump_else,
         });
         m_result_cfgs.back().get_newest_bb().value()->steps.emplace_back(OperNonary {
-            .op = Op::meta_save_patch,
+            .op = Op::meta_mark_if_else_check,
         });
 
         const auto cond_if_bb_id = emit_block(std::get<Syntax::Stmts::Block>(cond.if_body->data), source);
@@ -530,13 +535,10 @@ namespace Minuet::IR::Convert {
                 .op = Op::jump,
             });
             m_result_cfgs.back().get_newest_bb().value()->steps.emplace_back(OperNonary {
-                .op = Op::meta_save_patch,
+                .op = Op::meta_mark_if_else_alt,
             });
             m_result_cfgs.back().get_newest_bb().value()->steps.emplace_back(OperNonary {
                 .op = Op::nop,
-            });
-            m_result_cfgs.back().get_newest_bb().value()->steps.emplace_back(OperNonary {
-                .op = Op::meta_patch_jmp_else,
             });
 
             const auto cond_else_bb_id = emit_block(std::get<Syntax::Stmts::Block>(cond.else_body->data), source);
@@ -545,7 +547,7 @@ namespace Minuet::IR::Convert {
                 .op = Op::nop,
             });
             m_result_cfgs.back().get_newest_bb().value()->steps.emplace_back(OperNonary {
-                .op = Op::meta_patch_jmp,
+                .op = Op::meta_end_if_else,
             });
             m_pending_links.push({
                 .from = pre_cond_bb_id,
@@ -558,10 +560,6 @@ namespace Minuet::IR::Convert {
                 .from = cond_else_bb_id,
                 .to = post_cond_bb_id,
             });
-            m_pending_links.push({
-                .from = cond_if_bb_id,
-                .to = post_cond_bb_id,
-            });
         } else {
             const auto post_if_body_bb_id = m_result_cfgs.back().add_bb();
 
@@ -569,7 +567,7 @@ namespace Minuet::IR::Convert {
                 .op = Op::nop,
             });
             m_result_cfgs.back().get_newest_bb().value()->steps.emplace_back(OperNonary {
-                .op = Op::meta_patch_jmp_else,
+                .op = Op::meta_end_if_else,
             });
             m_pending_links.push({
                 .from = cond_if_bb_id,
@@ -623,13 +621,16 @@ namespace Minuet::IR::Convert {
             }
         );
 
-        if (auto check_result_aa = emit_expr(wloop.check, source); !check_result_aa) {
+        auto check_result_aa = emit_expr(wloop.check, source);
+
+        if (!check_result_aa) {
             return false;
         }
 
         m_result_cfgs.back().get_newest_bb().value()->steps.emplace_back(
-            OperUnary {
-                .arg_0 = AbsAddress {
+            OperBinary {
+                .arg_0 = check_result_aa.value(),
+                .arg_1 = AbsAddress {
                     .id = 0,
                     .tag = AbsAddrTag::immediate,
                 },
@@ -638,7 +639,7 @@ namespace Minuet::IR::Convert {
         );
         m_result_cfgs.back().get_newest_bb().value()->steps.emplace_back(
             OperNonary {
-                .op = Op::meta_mark_break,
+                .op = Op::meta_mark_while_check,
             }
         );
         

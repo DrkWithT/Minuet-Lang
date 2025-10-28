@@ -33,11 +33,13 @@ namespace Minuet::IR::Steps {
         "halt",
         "#begin_while",
         "#end_while",
+        "#mark_while_check",
         "#mark_break",
         "#mark_continue",
-        "#save_patch",
-        "#patch_jmp_else",
-        "#patch_jmp",
+        "#begin_if_else",
+        "#end_if_else",
+        "#mark_if_else_check",
+        "#mark_if_else_alt",
     };
 
     static constexpr std::array<std::string_view, static_cast<std::size_t>(AbsAddrTag::last)> aa_names = {

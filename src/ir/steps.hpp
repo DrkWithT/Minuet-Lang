@@ -36,11 +36,13 @@ namespace Minuet::IR::Steps {
         halt,
         meta_begin_while,
         meta_end_while,
+        meta_mark_while_check,
         meta_mark_break,
         meta_mark_continue,
-        meta_save_patch,
-        meta_patch_jmp_else,
-        meta_patch_jmp,
+        meta_begin_if_else,
+        meta_end_if_else,
+        meta_mark_if_else_check,
+        meta_mark_if_else_alt,
         last,
     };
 
