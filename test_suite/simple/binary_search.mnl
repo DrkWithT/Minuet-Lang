@@ -4,7 +4,7 @@ import "./stdlib/stdio.mnl"
 
 fun main: [] => {
     def nums = [1, 2, 3, 4, 5]
-    def target = 1
+    def target = 4
 
     def low = 0
     def high = 4
