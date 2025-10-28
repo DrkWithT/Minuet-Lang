@@ -15,7 +15,7 @@ namespace Minuet::Runtime::VM {
     static constexpr auto ok_res_value = static_cast<int>(Utils::ExecStatus::ok);
 
     Engine::Engine(Utils::EngineConfig config, Code::Program& prgm, std::any native_fn_table_wrap)
-    : m_heap {}, m_memory {}, m_call_frames {}, m_chunk_view {}, m_const_view {}, m_call_frame_ptr {nullptr}, m_native_funcs {}, m_rfi {}, m_rip {}, m_rbp {}, m_rft {}, m_rsp {}, m_consts_n {}, m_rrd {}, m_res {}, m_rfv {} {
+    : m_heap {}, m_memory {}, m_call_frames {}, m_chunk_view {}, m_const_view {}, m_call_frame_ptr {nullptr}, m_native_funcs {}, m_rfi {}, m_rip {}, m_rbp {}, m_rft {}, m_rsp {}, m_consts_n {}, m_rrd {}, m_res {} {
         const auto [mem_limit, recur_depth_max] = config;
         const auto prgm_entry_fn_id = prgm.entry_id.value_or(-1);
 
@@ -50,7 +50,6 @@ namespace Minuet::Runtime::VM {
             .old_base_ptr = 0,
             .old_mem_top = 0,
             .old_exec_status = ok_res_value,
-            .old_flag_val = false,
         };
         ++m_rrd; // NOTE: main is implicitly called if present... call depth is now 1 to count this!
     }
@@ -66,7 +65,7 @@ namespace Minuet::Runtime::VM {
                     ++m_rip;
                     break;
                 case Code::Opcode::make_seq:
-                    handle_make_seq(metadata, args[0]);
+                    handle_make_seq(args[0]);
                     break;
                 case Code::Opcode::seq_obj_push:
                     handle_seq_obj_push(metadata, args[0], args[1], args[2]);
@@ -78,7 +77,7 @@ namespace Minuet::Runtime::VM {
                     handle_seq_obj_get(metadata, args[0], args[1], args[2]);
                     break;
                 case Code::Opcode::frz_seq_obj:
-                    handle_frz_seq_obj(metadata, args[0]);
+                    handle_frz_seq_obj(args[0]);
                     break;
                 case Code::Opcode::load_const:
                     handle_load_const(metadata, args[0], args[1]);
@@ -129,13 +128,13 @@ namespace Minuet::Runtime::VM {
                     handle_cmp_gte(metadata, args[0], args[1], args[2]);
                     break;
                 case Code::Opcode::jump:
-                    handle_jmp(args[0]);
+                    m_rip = args[0];
                     break;
                 case Code::Opcode::jump_if:
-                    handle_jmp_if(args[0]);
+                    handle_jmp_if(args[0], args[1]);
                     break;
                 case Code::Opcode::jump_else:
-                    handle_jmp_else(args[0]);
+                    handle_jmp_else(args[0], args[1]);
                     break;
                 case Code::Opcode::call:
                     handle_call(args[0], args[1]);
@@ -223,9 +222,9 @@ namespace Minuet::Runtime::VM {
         }
     }
 
-    void Engine::handle_make_seq([[maybe_unused]] uint16_t metadata, int16_t dest) noexcept {
+    void Engine::handle_make_seq(int16_t dest_reg) noexcept {
         HeapValuePtr temp_obj_ref = m_heap.try_create_value(ObjectTag::sequence).get();
-        const auto abs_reg_id = m_rbp + dest;
+        const auto abs_reg_id = m_rbp + dest_reg;
 
         m_memory[abs_reg_id] = temp_obj_ref;
 
@@ -302,7 +301,7 @@ namespace Minuet::Runtime::VM {
         m_res = static_cast<int>(Utils::ExecStatus::mem_error);
     }
 
-    void Engine::handle_frz_seq_obj([[maybe_unused]] uint16_t metadata, int16_t dest) noexcept {
+    void Engine::handle_frz_seq_obj(int16_t dest) noexcept {
         const auto abs_dest_id = m_rbp + dest;
 
         if (HeapValuePtr obj_ref = m_memory[abs_dest_id].to_object_ptr(); obj_ref) {
@@ -467,8 +466,7 @@ namespace Minuet::Runtime::VM {
 
         const auto real_mem_loc = m_rbp + dest;
 
-        m_rfv = lhs_opt.value() == rhs_opt.value();
-        m_memory[real_mem_loc] = {m_rfv};
+        m_memory[real_mem_loc] = lhs_opt.value() == rhs_opt.value();
         m_rft = std::max(m_rft, real_mem_loc);
         ++m_rip;
     }
@@ -482,8 +480,7 @@ namespace Minuet::Runtime::VM {
 
         const auto real_mem_loc = m_rbp + dest;
 
-        m_rfv = lhs_opt.value() != rhs_opt.value();
-        m_memory[real_mem_loc] = {m_rfv};
+        m_memory[real_mem_loc] = lhs_opt.value() != rhs_opt.value();
         m_rft = std::max(m_rft, real_mem_loc);
         ++m_rip;
     }
@@ -497,8 +494,7 @@ namespace Minuet::Runtime::VM {
 
         const auto real_mem_loc = m_rbp + dest;
 
-        m_rfv = lhs_opt.value() < rhs_opt.value();
-        m_memory[real_mem_loc] = m_rfv;
+        m_memory[real_mem_loc] = lhs_opt.value() < rhs_opt.value();
         m_rft = std::max(m_rft, real_mem_loc);
         ++m_rip;
     }
@@ -512,8 +508,7 @@ namespace Minuet::Runtime::VM {
 
         const auto real_mem_loc = m_rbp + dest;
 
-        m_rfv = lhs_opt.value() > rhs_opt.value();
-        m_memory[real_mem_loc] = {m_rfv};
+        m_memory[real_mem_loc] = lhs_opt.value() > rhs_opt.value();
         m_rft = std::max(m_rft, real_mem_loc);
         ++m_rip;
     }
@@ -527,8 +522,7 @@ namespace Minuet::Runtime::VM {
 
         const auto real_mem_loc = m_rbp + dest;
 
-        m_rfv = lhs_opt.value() >= rhs_opt.value();
-        m_memory[real_mem_loc] = {m_rfv};
+        m_memory[real_mem_loc] = lhs_opt.value() >= rhs_opt.value();
         m_rft = std::max(m_rft, real_mem_loc);
         ++m_rip;
     }
@@ -542,26 +536,21 @@ namespace Minuet::Runtime::VM {
 
         const auto real_mem_loc = m_rbp + dest;
 
-        m_rfv = lhs_opt.value() <= rhs_opt.value();
-        m_memory[real_mem_loc] = {m_rfv};
+        m_memory[real_mem_loc] = lhs_opt.value() <= rhs_opt.value();
         m_rft = std::max(m_rft, real_mem_loc);
         ++m_rip;
     }
 
-    void Engine::handle_jmp(int16_t dest_ip) noexcept {
-        m_rip = dest_ip;
-    }
-
-    void Engine::handle_jmp_if(int16_t dest_ip) noexcept {
-        if (m_rfv) {
+    void Engine::handle_jmp_if(int16_t check_reg, int16_t dest_ip) noexcept {
+        if (m_memory[m_rbp + check_reg]) {
             m_rip = dest_ip;
         } else {
             ++m_rip;
         }
     }
 
-    void Engine::handle_jmp_else(int16_t dest_ip) noexcept {
-        if (!m_rfv) {
+    void Engine::handle_jmp_else(int16_t check_reg, int16_t dest_ip) noexcept {
+        if (!m_memory[m_rbp + check_reg]) {
             m_rip = dest_ip;
         } else {
             ++m_rip;
@@ -581,7 +570,6 @@ namespace Minuet::Runtime::VM {
         const auto old_rbp = m_rbp;
         const auto old_rft = m_rft;
         const auto old_res = m_res;
-        const auto old_rfv = m_rfv;
 
         ++m_call_frame_ptr;
         *m_call_frame_ptr = Utils::CallFrame {
@@ -590,7 +578,6 @@ namespace Minuet::Runtime::VM {
             .old_base_ptr = old_rbp,
             .old_mem_top = old_rft,
             .old_exec_status = old_res,
-            .old_flag_val = old_rfv,
         };
         ++m_rrd;
 
@@ -613,7 +600,7 @@ namespace Minuet::Runtime::VM {
         m_memory[m_rbp] = std::move(ret_src_opt.value());
 
         /// 2. Restore the caller's call state
-        auto [caller_rfi, caller_rip, caller_rbp, caller_rft, caller_res, caller_rfv] = *m_call_frame_ptr;
+        auto [caller_rfi, caller_rip, caller_rbp, caller_rft, caller_res] = *m_call_frame_ptr;
         --m_call_frame_ptr;
         --m_rrd;
 
@@ -622,7 +609,6 @@ namespace Minuet::Runtime::VM {
         m_rbp = caller_rbp;
         m_rft = caller_rft;
         m_res = caller_res;
-        m_rfv = caller_rfv;
 
         try_mark_and_sweep();
     }

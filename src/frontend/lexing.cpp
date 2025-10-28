@@ -29,6 +29,7 @@ namespace Minuet::Frontend::Lexing {
         }
 
         const auto peek_0 = sv[m_pos];
+        const auto peek_1 = sv[m_pos + 1];
 
         if (Helpers::match_spaces(peek_0)) {
             return lex_spaces(sv);
@@ -53,7 +54,7 @@ namespace Minuet::Frontend::Lexing {
 
         if (Helpers::match_alpha(peek_0)) {
             return lex_word(sv);
-        } else if (Helpers::match_digit(peek_0)) {
+        } else if (Helpers::match_digit(peek_0) || (peek_0 == '-' && Helpers::match_digit(peek_1))) {
             return lex_numeric(sv);
         } else if (Helpers::match_operator(peek_0)) {
             return lex_operator(sv);
@@ -163,17 +164,20 @@ namespace Minuet::Frontend::Lexing {
         const auto temp_ln = m_line;
         const auto temp_col = m_col;
         auto dots = 0;
+        auto minuses = 0;
 
         while (!at_eof()) {
             const auto c = sv[m_pos];
 
-            if (!Helpers::match_numeric(c)) {
+            if (!Helpers::match_numeric(c) && c != '-') {
                 --temp_end;
                 break;
             }
 
             if (c == '.') {
                 ++dots;
+            } else if (c == '-') {
+                ++minuses;
             }
 
             update_src_location(c);
@@ -181,13 +185,17 @@ namespace Minuet::Frontend::Lexing {
             ++temp_end;
         }
 
-        const auto checked_tag = ([](int dot_count) {
+        const auto checked_tag = ([](int dot_count, int minus_count) {
+            if (minus_count > 1) {
+                return Lexicals::TokenType::unknown;
+            }
+
             switch (dot_count) {
                 case 0: return Lexicals::TokenType::literal_int;
                 case 1: return Lexicals::TokenType::literal_double;
                 default: return Lexicals::TokenType::unknown;
             }
-        })(dots);
+        })(dots, minuses);
 
         return Lexicals::Token {
             .type = checked_tag,

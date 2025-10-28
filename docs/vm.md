@@ -11,7 +11,7 @@
     - `RSP`: pointer of stack top
     - `RES`: error status
     - `RRD`: current recursion depth
-    - `RFV`: flag value (for comparisons)
+    - `RFV`: flag value (for comparisons) (**TODO: remove**)
  - Will have a heap and GC.
 
 ### Instruction Encoding (from LSB to MSB)
@@ -26,7 +26,7 @@
  - Old `RBP` value
  - Old `RFT` value
  - Old `RES` value
- - Old `RFV` value
+ - Old `RFV` value (**TODO: remove**)
 
 ### Opcodes:
  - `nop`: does nothing except increment `RIP`
@@ -45,20 +45,20 @@
  - `mod <dest-reg> <lhs: const / reg> <rhs: const / reg>`: ...
  - `add <dest-reg> <lhs: const / reg> <rhs: const / reg>`: ...
  - `sub <dest-reg> <lhs: const / reg> <rhs: const / reg>`: ...
- - `equ <lhs: const / reg> <rhs: const / reg>`: ...
- - `neq <lhs: const / reg> <rhs: const / reg>`: sets `RFV` to the result of the comparison
- - `lt <lhs: const / reg> <rhs: const / reg>`: similar to previous
- - `gt <lhs: const / reg> <rhs: const / reg>`: similar to previous
- - `lte <lhs: const / reg> <rhs: const / reg>`: similar to previous
- - `gte <lhs: const / reg> <rhs: const / reg>`: similar to previous
+ - `equ <dest-reg> <lhs: const / reg> <rhs: const / reg>`: ...
+ - `neq <dest-reg> <lhs: const / reg> <rhs: const / reg>`: sets `RFV` to the result of the comparison
+ - `lt <dest-reg> <lhs: const / reg> <rhs: const / reg>`: similar to previous
+ - `gt <dest-reg> <lhs: const / reg> <rhs: const / reg>`: similar to previous
+ - `lte <dest-reg> <lhs: const / reg> <rhs: const / reg>`: similar to previous
+ - `gte <dest-reg> <lhs: const / reg> <rhs: const / reg>`: similar to previous
  - `jump <target-ip: imm>`: sets `RIP` to the immediate value (absolute code chunk position)
- - `jump_if: <target-ip: imm>`: sets `RIP` to the immediate value if `RFV == true`
- - `jump_else: <target-ip: imm>`: sets `RIP` to the immediate value if `RFV == false`
- - `call <func-id: imm> <arg-count: imm> <local-count: imm>`: saves some special registers (`RES`, `RFV`) and caller state in a call frame, prepares a register frame above the latest argument register, and sets:
+ - `jump_if: <cond-reg> <target-ip: imm>`: sets `RIP` to the immediate value if `cond-reg` is truthy.
+ - `jump_else: <cond-reg> <target-ip: imm>`: sets `RIP` to the immediate value if `cond-reg` is truthy.
+ - `call <func-id: imm> <arg-count: imm>`: saves some special registers (`RES`, `RFV`) and caller state in a call frame, prepares a register frame above the latest argument register, and sets:
     - `RFI` to `func-id` (saved to `ret-func-id` on call frame)
     - `RIP` to 0 (saved to `ret-address` on call frame)
     - `RBP` to `RFT - arg_count + 1`
- - `native_call <native-func-id: imm>`: invokes the registered native function upon VM state:
+ - `native_call <native-func-id: imm> <arg-count: imm>`: invokes the registered native function upon VM state:
    - The native function must respect the "calling convention"... It must access by register base offset (`caller_RFT - arg_count + 1`).
    - Native functions must call `Engine::handle_native_fn_return(<result-Value>)` on completion _only if_ anything is returned.
  - `ret <src: const / reg>`: places a return value at the `RBP` location, destroys the current register frame, and restores some special registers (`RFV`, `RES`) and caller state from the top call frame

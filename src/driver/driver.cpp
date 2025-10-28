@@ -6,7 +6,7 @@
 
 #include "semantics/analyzer.hpp"
 #include "ir/convert_ast.hpp"
-#include "codegen/emitter.hpp"
+#include "bcgen/emitter.hpp"
 #include "runtime/vm.hpp"
 #include "driver/sources.hpp"
 #include "driver/driver.hpp"
@@ -146,6 +146,18 @@ namespace Minuet::Driver {
         return ir_opt.value();
     }
 
+    auto Driver::apply_ir_passes([[maybe_unused]] IR::CFG::FullIR& ir) -> bool {
+        // IR::Pass::MovTrimmer opt_movs_pass;
+
+        // for (const auto& cfg : ir.cfg_list) {
+        //     if (!opt_movs_pass.apply(cfg)) {
+        //         return false;
+        //     }
+        // }
+
+        return true;
+    }
+
     [[maybe_unused]] auto Driver::generate_program(IR::CFG::FullIR& ir) -> std::optional<Runtime::Code::Program> {
         Codegen::Emitter emitter;
 
@@ -180,6 +192,10 @@ namespace Minuet::Driver {
         auto& program_ir = program_ir_opt.value();
 
         m_ir_printer->operator()(&program_ir);
+
+        if (!apply_ir_passes(program_ir)) {
+            return false;
+        }
 
         auto program_opt = generate_program(program_ir);
 

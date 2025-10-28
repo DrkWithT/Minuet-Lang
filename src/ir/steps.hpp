@@ -36,11 +36,13 @@ namespace Minuet::IR::Steps {
         halt,
         meta_begin_while,
         meta_end_while,
+        meta_mark_while_check,
         meta_mark_break,
         meta_mark_continue,
-        meta_save_patch,
-        meta_patch_jmp_else,
-        meta_patch_jmp,
+        meta_begin_if_else,
+        meta_end_if_else,
+        meta_mark_if_else_check,
+        meta_mark_if_else_alt,
         last,
     };
 
@@ -50,8 +52,7 @@ namespace Minuet::IR::Steps {
         immediate,
         constant,
         temp,
-        stack,
-        heap,
+        // stack,
         last,
     };
 
@@ -60,6 +61,10 @@ namespace Minuet::IR::Steps {
     struct AbsAddress {
         AbsAddrTag tag;
         int16_t id;
+
+        [[nodiscard]] friend constexpr auto operator==(AbsAddress lhs, AbsAddress rhs) noexcept {
+            return lhs.tag == rhs.tag && lhs.id == rhs.id;
+        }
     };
 
     struct TACUnary {
