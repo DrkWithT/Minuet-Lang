@@ -24,7 +24,6 @@ namespace Minuet::Runtime::VM {
             int old_base_ptr;
             int old_mem_top; // old register frame top
             uint8_t old_exec_status;
-            bool old_flag_val;
         };
 
         enum class ExecStatus : uint8_t {
@@ -54,11 +53,11 @@ namespace Minuet::Runtime::VM {
 
         void try_mark_and_sweep();
 
-        void handle_make_seq(uint16_t metadata, int16_t dest) noexcept;
+        void handle_make_seq(int16_t dest_reg) noexcept;
         void handle_seq_obj_push(uint16_t metadata, int16_t dest, int16_t src_id, int16_t mode) noexcept;
         void handle_seq_obj_pop(uint16_t metadata, int16_t dest, int16_t src_id, int16_t mode) noexcept;
         void handle_seq_obj_get(uint16_t metadata, int16_t dest, int16_t src_id, int16_t pos_value_id) noexcept;
-        void handle_frz_seq_obj(uint16_t metadata, int16_t dest) noexcept;
+        void handle_frz_seq_obj(int16_t dest) noexcept;
 
         void handle_load_const(uint16_t metadata, int16_t dest, int16_t const_id) noexcept;
         void handle_mov(uint16_t metadata, int16_t dest, int16_t src) noexcept;
@@ -79,9 +78,9 @@ namespace Minuet::Runtime::VM {
         void handle_cmp_gte(uint16_t metadata, int16_t dest, int16_t lhs, int16_t rhs) noexcept;
         void handle_cmp_lte(uint16_t metadata, int16_t dest, int16_t lhs, int16_t rhs) noexcept;
 
-        void handle_jmp(int16_t dest_ip) noexcept;
-        void handle_jmp_if(int16_t dest_ip) noexcept;
-        void handle_jmp_else(int16_t dest_ip) noexcept;
+        // void handle_jmp(int16_t dest_ip) noexcept;
+        void handle_jmp_if(int16_t check_reg, int16_t dest_ip) noexcept;
+        void handle_jmp_else(int16_t check_reg, int16_t dest_ip) noexcept;
         void handle_call(int16_t func_id, int16_t arg_count) noexcept;
         void handle_native_call(int16_t native_id, [[maybe_unused]] int16_t arg_count) noexcept;
         void handle_ret(uint16_t metadata, int16_t src_id) noexcept;
@@ -104,7 +103,6 @@ namespace Minuet::Runtime::VM {
         int m_consts_n;
         int16_t m_rrd; // Counts 1-based recursion depth- 0 means done!
         uint8_t m_res;  // Contains execution status code
-        bool m_rfv; // Represents conditional-test flag value
     };
 }
 
