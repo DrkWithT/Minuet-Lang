@@ -9,17 +9,18 @@
 
 namespace Minuet::Codegen {
     namespace Utils {
-        struct Patch {
-            std::size_t instruction_pos;
-            std::size_t target_ip;
-            bool cf_forward;
+        struct ActiveIfElse {
+            int check_ip;
+            int alt_ip;
+            int end_ip;
         };
 
         struct ActiveLoop {
-            std::vector<std::size_t> brk_ips;  // loop-breaking jumps
-            std::vector<std::size_t> cont_ips; // loop-continuing jumps
-            std::size_t start_ip;
-            std::size_t exit_ip;
+            std::vector<int> brk_ips;  // loop-breaking jumps
+            std::vector<int> cont_ips; // loop-continuing jumps
+            int start_ip;
+            int check_ip;
+            int exit_ip;
         };
 
         struct PseudoArg {
@@ -82,7 +83,7 @@ namespace Minuet::Codegen {
         [[nodiscard]] auto emit_chunk(const IR::CFG::CFG& cfg) -> bool;
 
         std::vector<Runtime::Code::Chunk> m_result_chunks;
-        std::vector<Utils::Patch> m_patches;
+        std::vector<Utils::ActiveIfElse> m_active_ifs;
         std::vector<Utils::ActiveLoop> m_active_loops;
         int16_t m_next_fun_id;
     };
