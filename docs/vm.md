@@ -11,7 +11,7 @@
     - `RSP`: pointer of stack top
     - `RES`: error status
     - `RRD`: current recursion depth
-    - `RFV`: flag value (for comparisons)
+    - `RFV`: flag value (for comparisons) (**TODO: remove**)
  - Will have a heap and GC.
 
 ### Instruction Encoding (from LSB to MSB)
@@ -26,7 +26,7 @@
  - Old `RBP` value
  - Old `RFT` value
  - Old `RES` value
- - Old `RFV` value
+ - Old `RFV` value (**TODO: remove**)
 
 ### Opcodes:
  - `nop`: does nothing except increment `RIP`
@@ -38,31 +38,22 @@
  - `load_const <dest-reg> <imm>`: places a constant by index into a register
  - `mov <dest-reg> <src: const / reg>`: places a copied source value (constant or register) to a destination register
  - `neg <dest-reg>`: negates a register value in-place
-   - (TODO: Add case support in `TACCondenser` pass.)
  - `inc <dest-reg>`: increments a register value in-place
-   - (TODO: Add case support in `TACCondenser` pass.)
  - `dec <dest-reg>`: decrements a register value in-place
-   - (TODO: Add case support in `TACCondenser` pass.)
  - `mul <dest-reg> <lhs: const / reg> <rhs: const / reg>`: ...
  - `div <dest-reg> <lhs: const / reg> <rhs: const / reg>`: ...
  - `mod <dest-reg> <lhs: const / reg> <rhs: const / reg>`: ...
  - `add <dest-reg> <lhs: const / reg> <rhs: const / reg>`: ...
  - `sub <dest-reg> <lhs: const / reg> <rhs: const / reg>`: ...
- - `equ <lhs: const / reg> <rhs: const / reg>`: ...
- - `neq <lhs: const / reg> <rhs: const / reg>`: sets `RFV` to the result of the comparison
- - `lt <lhs: const / reg> <rhs: const / reg>`: similar to previous
- - `gt <lhs: const / reg> <rhs: const / reg>`: similar to previous
- - `lte <lhs: const / reg> <rhs: const / reg>`: similar to previous
- - `gte <lhs: const / reg> <rhs: const / reg>`: similar to previous
- - **UNUSED:** `jump_equ <target-ip> <lhs: const / reg> <rhs: const / reg>`
- - **UNUSED:** `jump_neq <target-ip> <lhs: const / reg> <rhs: const / reg>`
- - **UNUSED:** `jump_lt <target-ip> <lhs: const / reg> <rhs: const / reg>`
- - **UNUSED:** `jump_lte <target-ip> <lhs: const / reg> <rhs: const / reg>`
- - **UNUSED:** `jump_gt <target-ip> <lhs: const / reg> <rhs: const / reg>`
- - **UNUSED:** `jump_gte <target-ip> <lhs: const / reg> <rhs: const / reg>`
+ - `equ <dest-reg> <lhs: const / reg> <rhs: const / reg>`: ...
+ - `neq <dest-reg> <lhs: const / reg> <rhs: const / reg>`: sets `RFV` to the result of the comparison
+ - `lt <dest-reg> <lhs: const / reg> <rhs: const / reg>`: similar to previous
+ - `gt <dest-reg> <lhs: const / reg> <rhs: const / reg>`: similar to previous
+ - `lte <dest-reg> <lhs: const / reg> <rhs: const / reg>`: similar to previous
+ - `gte <dest-reg> <lhs: const / reg> <rhs: const / reg>`: similar to previous
  - `jump <target-ip: imm>`: sets `RIP` to the immediate value (absolute code chunk position)
- - `jump_if: <target-ip: imm>`: sets `RIP` to the immediate value if `RFV == true`
- - `jump_else: <target-ip: imm>`: sets `RIP` to the immediate value if `RFV == false`
+ - `jump_if: <cond-reg> <target-ip: imm>`: sets `RIP` to the immediate value if `cond-reg` is truthy.
+ - `jump_else: <cond-reg> <target-ip: imm>`: sets `RIP` to the immediate value if `cond-reg` is truthy.
  - `call <func-id: imm> <arg-count: imm>`: saves some special registers (`RES`, `RFV`) and caller state in a call frame, prepares a register frame above the latest argument register, and sets:
     - `RFI` to `func-id` (saved to `ret-func-id` on call frame)
     - `RIP` to 0 (saved to `ret-address` on call frame)
